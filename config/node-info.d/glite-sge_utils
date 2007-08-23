@@ -1,0 +1,3 @@
+SGE_utils_FUNCTIONS="
+config_apel_sge
+config_sge2lcg_ce"

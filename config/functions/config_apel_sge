@@ -1,0 +1,36 @@
+config_apel_sge(){
+
+INSTALL_ROOT=${INSTALL_ROOT:-/opt}
+
+requires MON_HOST SITE_NAME CE_HOST APEL_DB_PASSWORD BATCH_SERVER BATCH_LOG_DIR
+
+echo ${BATCH_LOG_DIR} | sed 's/\//\\\//g' > /tmp/batchacclogs
+BATCH_LOGS_DIR=`cat /tmp/batchacclogs`
+rm -f /tmp/batchacclogs
+
+cat ${INSTALL_ROOT}/glite/etc/glite-apel-sge/parser-config.xml | sed \
+    -e "s/localhost/${MON_HOST}/" \
+    -e "s/<DBUsername>.*/<DBUsername>accounting<\/DBUsername>/" \
+    -e "s/<DBPassword>.*/<DBPassword>${APEL_DB_PASSWORD}<\/DBPassword>/" \
+    -e "s/<SubmitHost>.*/<SubmitHost>${BATCH_SERVER}<\/SubmitHost>/" \
+    -e "s/<SiteName>.*/<SiteName>${SITE_NAME}<\/SiteName>/" \
+    -e "s/<Dir>\/var\/spool\/pbs\/server_priv\/accounting<\/Dir>/<Dir>${BATCH_LOGS_DIR}<\/Dir>/" \
+    -e "s/<GIIS>.*/<GIIS>${CE_HOST}<\/GIIS>/" \
+    -e "/<DBDeleteProcessor/d" \
+    -e "/<ExtraFile/d" \
+> ${INSTALL_ROOT}/glite/etc/glite-apel-sge/parser-config-yaim.xml
+
+
+chown root:root ${INSTALL_ROOT}/glite/etc/glite-apel-sge/parse\r-config-yaim.xml
+chmod 600 ${INSTALL_ROOT}/glite/etc/glite-apel-sge/parse\r-config-yaim.xml
+
+# Remove confusion with two different jobs being called edg-rgma-apel
+if [ -f ${CRON_DIR}/edg-rgma-apel ]; then
+    rm -f ${CRON_DIR}/edg-rgma-apel
+fi
+
+cron_job edg-apel-sge-parser root "35 01 * * * env RGMA_HOME=${INSTALL_ROOT}/glite APEL_HOME=${INSTALL_ROOT}/glite ${INSTALL_ROOT}/glite/bin/apel-sge-log-parser -f ${INSTALL_ROOT}/glite/etc/glite-apel-sge/parser-config-yaim.xml >> /var/log/apel.log 2>&1"
+
+return 0
+
+}
