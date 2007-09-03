@@ -1,10 +1,10 @@
 %define topdir %(pwd)/rpmbuild
 %define _topdir %{topdir} 
-Summary: glite-yaim-sge-utils module configures the SGE utils. 
+Summary: glite-yaim-sge-utils module configure SGE utils. 
 Name: glite-yaim-sge-utils
-Version: x  
+Version: ame:
 Vendor: EGEE
-Release: x  
+Release: ame:
 License: EGEE
 Group: EGEE
 Source: %{name}.src.tgz
@@ -15,7 +15,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-build
 Packager: EGEE
 
 %description
-This package contains the yaim functions necessary to configure the SGE utils.
+This package contains the yaim functions necessary to configure SGE utils.
 
 %prep
 
@@ -25,10 +25,10 @@ This package contains the yaim functions necessary to configure the SGE utils.
 make install prefix=%{buildroot}%{prefix}
 
 %files
-%defattr(-,root,root)
+%defattr(0644,root,root)
 %{prefix}/yaim/functions/config_*
 %{prefix}/yaim/node-info.d/glite-*
-%config(noreplace) %{prefix}/yaim/services/glite-*
+%{prefix}/yaim/examples/siteinfo/services/glite-* 
 %doc LICENSE
 
 
