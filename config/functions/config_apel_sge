@@ -35,7 +35,7 @@ function config_apel_sge_check(){
 
 
 function config_apel_sge_setenv(){
-
+    return 0
 }
 
 

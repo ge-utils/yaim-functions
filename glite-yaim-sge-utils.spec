@@ -2,9 +2,9 @@
 %define _topdir %{topdir} 
 Summary: glite-yaim-sge-utils module configure SGE utils. 
 Name: glite-yaim-sge-utils
-Version: ame:
+Version: x
 Vendor: EGEE
-Release: ame:
+Release: x
 License: EGEE
 Group: EGEE
 Source: %{name}.src.tgz

@@ -33,7 +33,7 @@ rpm:
 	@mkdir -p  rpmbuild/SPECS/
 	@mkdir -p  rpmbuild/SOURCES/
 	@mkdir -p  rpmbuild/BUILD/
-ifneq ("x$(tag)","x")
+ifneq ("$(tag)","ame:")
 	@sed -i 's/^Version:.*/Version: $(version)/' $(package).spec
 	@sed -i 's/^Release:.*/Release: $(release)/' $(package).spec
 endif

@@ -38,7 +38,7 @@ function config_sge2lcg_ce_check(){
 
 
 function config_sge2lcg_ce_setenv(){
-
+    return 0
 }
 
 
