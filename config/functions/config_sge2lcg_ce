@@ -50,21 +50,21 @@ INSTALL_ROOT=${INSTALL_ROOT:-/opt}
 ### Create SGE configuration files needed for the submission host
 ###
 
-echo
-echo "   INFO: Set proper SGE environment"
+yaimlog INFO \
+yaimlog INFO " Set proper SGE environment"
 
 if [ ! -d ${SGE_ROOT}/${SGE_CELL} ]; then
-   echo "   WARNING: ${SGE_ROOT}/${SGE_CELL} doesn't exist. Probably SGE is not installed yet..."
-   echo "   INFO: Making ${SGE_ROOT}/${SGE_CELL} ..."
+   yaimlog WARNING " ${SGE_ROOT}/${SGE_CELL} doesn't exist. Probably SGE is not installed yet..."
+   yaimlog INFO " Making ${SGE_ROOT}/${SGE_CELL} ..."
    mkdir ${SGE_ROOT}/${SGE_CELL}
-   echo "   INFO: Making ${SGE_ROOT}/${SGE_CELL}/common ..."
+   yaimlog INFO " Making ${SGE_ROOT}/${SGE_CELL}/common ..."
    mkdir ${SGE_ROOT}/${SGE_CELL}/common
 fi
 
 BOOTSTRAP_FILE=$SGE_ROOT/$SGE_CELL/common/bootstrap
-echo "   INFO: Checking if ${BOOTSTRAP_FILE} exists..."
+yaimlog INFO " Checking if ${BOOTSTRAP_FILE} exists..."
 if [ ! -e ${BOOTSTRAP_FILE} ]; then
-   echo "   INFO: Making ${SGE_ROOT}/${SGE_CELL}/common/bootstrap ..."
+   yaimlog INFO " Making ${SGE_ROOT}/${SGE_CELL}/common/bootstrap ..."
    cat <<EOF > ${BOOTSTRAP_FILE}
 admin_user        none
 default_domain    $MY_DOMAIN
@@ -79,7 +79,7 @@ EOF
 fi
 
 ACT_QMASTER_FILE=$SGE_ROOT/$SGE_CELL/common/act_qmaster
-echo "   INFO: Checking if ${ACT_QMASTER_FILE} exists..."
+yaimlog INFO " Checking if ${ACT_QMASTER_FILE} exists..."
 cat <<EOF > ${ACT_QMASTER_FILE}
 ${BATCH_SERVER}
 EOF
@@ -89,7 +89,7 @@ EOF
 ### Build the scripts which set the proper SGE environment
 ###
 
-echo "   INFO: Create /etc/profile.d/sge.sh and /etc/profile.d/sge.csh"
+yaimlog INFO " Create /etc/profile.d/sge.sh and /etc/profile.d/sge.csh"
 
 SGE_SHENV_FILE=/etc/profile.d/sge.sh
 if [ -e $SGE_SHENV_FILE ]; then
@@ -114,10 +114,10 @@ source ${SGE_ROOT}/${SGE_CELL}/common/settings.csh
 EOF
 
 SGE_SHSETTING_FILE=${SGE_ROOT}/${SGE_CELL}/common/settings.sh
-echo "   INFO: Check if ${SGE_SHSETTING_FILE} exists. If not, create it!"
+yaimlog INFO " Check if ${SGE_SHSETTING_FILE} exists. If not, create it!"
 if [ -e ${SGE_SHSETTING_FILE} ]; then
-   echo "   WARNING: ${SGE_SHSETTING_FILE} exists. "
-   echo "   WARNING: Your old file will be saved as ${SGE_SHSETTING_FILE}.OLD"
+   yaimlog WARNING " ${SGE_SHSETTING_FILE} exists. "
+   yaimlog WARNING " Your old file will be saved as ${SGE_SHSETTING_FILE}.OLD"
    mv -f ${SGE_SHSETTING_FILE} ${SGE_SHSETTING_FILE}.OLD
 fi
 
@@ -150,10 +150,10 @@ chmod 644 ${SGE_SHSETTING_FILE}
 source ${SGE_SHENV_FILE}
 
 SGE_CSHSETTING_FILE=${SGE_ROOT}/${SGE_CELL}/common/settings.csh
-echo "   INFO: Check if ${SGE_CSHSETTING_FILE} exists. If not, create it!"
+yaimlog INFO " Check if ${SGE_CSHSETTING_FILE} exists. If not, create it!"
 if [ -e ${SGE_CSHSETTING_FILE} ]; then
-   echo "   WARNING: ${SGE_CSHSETTING_FILE} exists. "
-   echo "   WARNING: Your old file will be saved as ${SGE_CSHSETTING_FILE}.OLD"
+   yaimlog WARNING " ${SGE_CSHSETTING_FILE} exists. "
+   yaimlog WARNING " Your old file will be saved as ${SGE_CSHSETTING_FILE}.OLD"
    mv -f ${SGE_CSHSETTING_FILE} ${SGE_CSHSETTING_FILE}.OLD
 fi
 
@@ -204,26 +204,26 @@ fi
 ### Fully based on CESGA implementation
 ### The SGE JobManager will be distributed with yaim core
 ###
-echo 
-echo "   INFO: Building SGE JobManager configuration files"
+yaimlog INFO \ 
+yaimlog INFO " Building SGE JobManager configuration files"
 
 ###
 ### Check if SGE JobManager is installed
 ###
 SGE_JOBMANAGER=$INSTALL_ROOT/globus/lib/perl/Globus/GRAM/JobManager/lcgsge.pm
 if [ ! -e $SGE_JOBMANAGER ]; then
-   echo "      ERROR: SGE JobManager is not installed !!! Without it Job Management will not work..."
-   echo "      ERROR: SGE JobManager configuration will continue... SGE will work after lcgsge.pm is installed and without re-configuration..." 
+   yaimlog ERROR " SGE JobManager is not installed !!! Without it Job Management will not work..."
+   yaimlog ERROR " SGE JobManager configuration will continue... SGE will work after lcgsge.pm is installed and without re-configuration..." 
 fi
 
 ###
 ### SGE JM configuration file
 ###
 SGE_JOBMANAGER_CONF=$INSTALL_ROOT/globus/lib/perl/Globus/GRAM/JobManager/lcgsge.conf
-echo "   INFO: Installing SGE Job manager configuration files" 
+yaimlog INFO " Installing SGE Job manager configuration files" 
 if [ -e $SGE_JOBMANAGER_CONF ]; then
-   echo "   WARNING: $SGE_JOBMANAGER_CONF already exists. "
-   echo "   WARNING: Your old configuration will be saved as ${SGE_JOBMANAGER_CONF}.OLD "
+   yaimlog WARNING " $SGE_JOBMANAGER_CONF already exists. "
+   yaimlog WARNING " Your old configuration will be saved as ${SGE_JOBMANAGER_CONF}.OLD "
    mv -f $SGE_JOBMANAGER_CONF ${SGE_JOBMANAGER_CONF}.OLD
 fi
 
@@ -232,9 +232,6 @@ cat <<EOF > $SGE_JOBMANAGER_CONF
 #
 # SGE paths
 \$SGE_BASE_PATH    = '$SGE_ROOT';
-\$SGE_BASE_CELL    = '$SGE_CELL';
-\$SGE_PORT_QMASTER = '536';
-\$SGE_PORT_EXECD   = '537';
 \$SGE_BIN_PATH     = '$SGE_ROOT/bin/$ARCH';
 # Default values for SGE required complex values
 # In case SGE forces to specify a given set of parameters you can
@@ -261,7 +258,7 @@ EOF
 ###
 ### Add JobManager to /etc/globus.conf
 ###
-echo "   INFO: Updating /etc/globus.conf to recognize the lcgsge JobManager"
+yaimlog INFO " Updating /etc/globus.conf to recognize the lcgsge JobManager"
 LCGSGE_GLOBUS=`grep "\[gatekeeper/lcgsge\]" /etc/globus.conf`
 if [ "X$LCGSGE_GLOBUS" = "X" ] 
 then
@@ -276,10 +273,10 @@ fi
 ### Declare SGE Queues in lcgsge.rvf
 ###
 SGE_LCGSGE_RVF=$INSTALL_ROOT/globus/share/globus_gram_job_manager/lcgsge.rvf
-echo "   INFO: Updating $SGE_LCGSGE_RVF file for SGE queues"
+yaimlog INFO " Updating $SGE_LCGSGE_RVF file for SGE queues"
 if [ -e $SGE_LCGSGE_RVF ]; then
-   echo "   WARNING: $SGE_LCGSGE_RVF already exists. "
-   echo "   WARNING: Your old configuration will be saved as ${SGE_JOBMANAGER_CONF}.OLD "
+   yaimlog WARNING " $SGE_LCGSGE_RVF already exists. "
+   yaimlog WARNING " Your old configuration will be saved as ${SGE_JOBMANAGER_CONF}.OLD "
    mv -f $SGE_LCGSGE_RVF ${SGE_LCGSGE_RVF}.OLD
 fi
 
@@ -318,8 +315,8 @@ EOF
 ### Build InfoProvider configuration files
 ### Fully based on LeSC implementation
 ###
-echo
-echo "   INFO: Installing InfoProvider configuration files "
+yaimlog INFO \
+yaimlog INFO " Installing InfoProvider configuration files "
 SGE_INFOPROVIDER_DIR=/etc/sge-jobmanager
 SGE_INFOPROVIDER_VQUEUES=$SGE_INFOPROVIDER_DIR/vqueues.conf
 SGE_INFOPROVIDER_REPORTER=$SGE_INFOPROVIDER_DIR/info-reporter.conf
@@ -327,8 +324,8 @@ SGE_INFOPROVIDER_CLUSTER=$SGE_INFOPROVIDER_DIR/cluster.state
 
 SGE_INFOPROVIDER=$INSTALL_ROOT/lcg/libexec/lcg-info-dynamic-sge
 if [ ! -e $SGE_INFOPROVIDER ]; then
-   echo "      ERROR: SGE InfoProvider is not installed !!! Without it the information system will not work..."
-   echo "      ERROR: SGE InfoProvider configuration will continue... SGE information system will work after lcg-info-dynamic-sge is installed and without re-configuration..."
+   yaimlog ERROR " SGE InfoProvider is not installed !!! Without it the information system will not work..."
+   yaimlog ERROR " SGE InfoProvider configuration will continue... SGE information system will work after lcg-info-dynamic-sge is installed and without re-configuration..."
 fi
 
 if [ ! -d $SGE_INFOPROVIDER_DIR ]; then
@@ -339,12 +336,12 @@ fi
 ### Virtual queue configuration file
 ###
 if [ -e $SGE_INFOPROVIDER_VQUEUES ]; then
-   echo "   WARNING: $SGE_INFOPROVIDER_VQUEUES file already exists."
-   echo "   WARNING: Your old configuration will be saved under ${SGE_INFOPROVIDER_VQUEUES}.OLD "
+   yaimlog WARNING " $SGE_INFOPROVIDER_VQUEUES file already exists."
+   yaimlog WARNING " Your old configuration will be saved under ${SGE_INFOPROVIDER_VQUEUES}.OLD "
    mv -f $SGE_INFOPROVIDER_VQUEUES ${SGE_INFOPROVIDER_VQUEUES}.OLD
 fi
 
-echo "   INFO: Creating $SGE_INFOPROVIDER_VQUEUES file..."
+yaimlog INFO " Creating $SGE_INFOPROVIDER_VQUEUES file..."
 cat <<EOF >> $SGE_INFOPROVIDER_VQUEUES
 #
 # SGE JobManager queue mapping file
@@ -387,12 +384,12 @@ done
 ### Reporter configuration file
 ###
 if [ -e $SGE_INFOPROVIDER_REPORTER ]; then
-   echo "   WARNING: $SGE_INFOPROVIDER_REPORTER file already exists."
-   echo "   WARNING: Your old configuration will be saved under ${SGE_INFOPROVIDER_REPORTER}.OLD "
+   yaimlog WARNING " $SGE_INFOPROVIDER_REPORTER file already exists."
+   yaimlog WARNING " Your old configuration will be saved under ${SGE_INFOPROVIDER_REPORTER}.OLD "
    mv -f $SGE_INFOPROVIDER_REPORTER ${SGE_INFOPROVIDER_REPORTER}.OLD
 fi
 
-echo "   INFO: Creating $SGE_INFOPROVIDER_REPORTER file..."
+yaimlog INFO " Creating $SGE_INFOPROVIDER_REPORTER file..."
 cat <<EOF >> $SGE_INFOPROVIDER_REPORTER
 #
 # Sample configuration file for SGE information reporter
@@ -422,7 +419,7 @@ SGE_CELL = $SGE_CELL
 ##############################################################################
 # Location of static LDIF file...
 
-ldif_file = $INSTALL_ROOT/lcg/var/gip/ldif/static-file-CE.ldif
+ldif_file = $INSTALL_ROOT/glite/etc/gip/ldif/static-file-CE.ldif
 
 ##############################################################################
 # Location of SGE jobmanager virtual queue mapping configuration file
@@ -487,7 +484,7 @@ EOF
 ###
 ### Cluster Status
 ###
-echo "   INFO: Set Cluster status to Production..."
+yaimlog INFO " Set Cluster status to Production..."
 rm -f $SGE_INFOPROVIDER_CLUSTER
 cat <<EOF >> $SGE_INFOPROVIDER_CLUSTER
 Production
@@ -496,8 +493,8 @@ EOF
 ###
 ### CE Plugin File
 ###
-echo "   INFO: Configure SGE dynamic information plugin"
-CE_PLUGIN_FILE=${INSTALL_ROOT}/lcg/var/gip/plugin/lcg-info-dynamic-ce
+yaimlog INFO " Configure SGE dynamic information plugin"
+CE_PLUGIN_FILE=${INSTALL_ROOT}/glite/etc/gip/plugin/glite-info-dynamic-ce
 if [ -e $CE_PLUGIN_FILE ]; then
    rm -f $CE_PLUGIN_FILE
 fi 
@@ -508,31 +505,31 @@ cat <<EOF > $CE_PLUGIN_FILE
 $plugin
 EOF
 
-chmod +x ${INSTALL_ROOT}/lcg/var/gip/plugin/lcg-info-dynamic-ce
+chmod +x ${INSTALL_ROOT}/glite/etc/gip/plugin/glite-info-dynamic-ce
 
 ###
 ### Include dynamic script in /opt/lcg/etc/lcg-info-generic.conf and restart globus-mds
 ###
 
-LCG_INFO_GENERIC_CONF=/opt/lcg/etc/lcg-info-generic.conf
-echo "   INFO: Configuring $SGE_INFOPROVIDER in $LCG_INFO_GENERIC_CONF as dynamic script"
+GLITE_INFO_GENERIC_CONF=/opt/glite/etc/gip/glite-info-generic.conf
+yaimlog INFO " Configuring $SGE_INFOPROVIDER in $GLITE_INFO_GENERIC_CONF as dynamic script"
 
-if [ ! -e $LCG_INFO_GENERIC_CONF ]; then
-   echo "   ERROR: $LCG_INFO_GENERIC_CONF does not exist"
+if [ ! -e $GLITE_INFO_GENERIC_CONF ]; then
+   yaimlog ABORT " $GLITE_INFO_GENERIC_CONF does not exist"
    exit 1
 fi
 
-dynamic_script_exists=`grep dynamic_script $LCG_INFO_GENERIC_CONF`
+dynamic_script_exists=`grep dynamic_script $GLITE_INFO_GENERIC_CONF`
 if [ $dynamic_script_exists==""  ]; then
-   echo "dynamic_script = /opt/lcg/libexec/lcg-info-dynamic-sge" > /opt/lcg/etc/lcg-info-generic.conf.tmp
-   cat /opt/lcg/etc/lcg-info-generic.conf >> /opt/lcg/etc/lcg-info-generic.conf.tmp
-   mv -f /opt/lcg/etc/lcg-info-generic.conf.tmp /opt/lcg/etc/lcg-info-generic.conf
+   echo "dynamic_script = /opt/lcg/libexec/lcg-info-dynamic-sge" > /opt/glite/etc/gip/glite-info-generic.conf.tmp
+   cat /opt/glite/etc/gip/glite-info-generic.conf >> /opt/glite/etc/gip/glite-info-generic.conf.tmp
+   mv -f /opt/glite/etc/gip/glite-info-generic.conf.tmp /opt/glite/etc/gip/glite-info-generic.conf
 else
-   echo "   WARNING: A dynamic script is already configured in $LCG_INFO_GENERIC_CONF"
-   echo "   WARNING: Rewritting current implementation \"$dynamic_script_exists\" "
-   echo "dynamic_script = /opt/lcg/libexec/lcg-info-dynamic-sge" > /opt/lcg/etc/lcg-info-generic.conf.tmp
-   cat /opt/lcg/etc/lcg-info-generic.conf | grep -v dynamic_script >> /opt/lcg/etc/lcg-info-generic.conf.tmp 
-   mv -f /opt/lcg/etc/lcg-info-generic.conf.tmp /opt/lcg/etc/lcg-info-generic.conf
+   yaimlog WARNING " A dynamic script is already configured in $GLITE_INFO_GENERIC_CONF"
+   yaimlog WARNING " Rewritting current implementation \"$dynamic_script_exists\" "
+   echo "dynamic_script = /opt/lcg/libexec/lcg-info-dynamic-sge" > /opt/glite/etc/gip/glite-info-generic.conf.tmp
+   cat /opt/glite/etc/gip/glite-info-generic.conf | grep -v dynamic_script >> /opt/glite/etc/gip/glite-info-generic.conf.tmp 
+   mv -f /opt/glite/etc/gip/glite-info-generic.conf.tmp /opt/glite/etc/gip/glite-info-generic.conf
 fi
 
 /etc/init.d/globus-mds stop
