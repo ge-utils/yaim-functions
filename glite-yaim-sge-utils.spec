@@ -10,7 +10,9 @@ Group: EGEE
 Source: %{name}.src.tgz
 BuildArch: noarch
 Prefix: /opt/glite
-Requires: glite-yaim-core
+Requires: glite-info-generic >= 2.0.2-2
+Requires: glite-yaim-core >= 4.0.1-1
+Requires: glite-yaim-lcg-ce >= 4.0.1-1
 BuildRoot: %{_tmppath}/%{name}-%{version}-build
 Packager: EGEE
 
