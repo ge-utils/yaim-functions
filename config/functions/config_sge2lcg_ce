@@ -47,6 +47,19 @@ function config_sge2lcg_ce(){
 INSTALL_ROOT=${INSTALL_ROOT:-/opt}
 
 ###
+### Get gLite version (3.0 or 3.1)
+###
+
+glite_version=`/opt/glite/bin/glite-version`
+if [ "X$glite_version" == "X" ]; then
+   yaimlog WARNING "glite version not defined. Assume gLite version >= 3.1"
+   yaimlog INFO "Running SGE configuration for gLite version >= 3.1" 
+fi
+if [ "X$glite_version" != "X" ]; then
+   yaimlog INFO "Running SGE configuration for gLite $glite_version"
+fi
+
+###
 ### Create SGE configuration files needed for the submission host
 ###
 
@@ -258,16 +271,49 @@ EOF
 ###
 ### Add JobManager to /etc/globus.conf
 ###
-yaimlog INFO " Updating /etc/globus.conf to recognize the lcgsge JobManager"
-LCGSGE_GLOBUS=`grep "\[gatekeeper/lcgsge\]" /etc/globus.conf`
-if [ "X$LCGSGE_GLOBUS" = "X" ] 
-then
-    cat <<EOF >> /etc/globus.conf
+
+glite_vers=`echo "$glite_version" | cut -d '.' -f1-2`
+LCGSGE_GLOBUS_FILE=/etc/globus.conf
+if [ "X$glite_version" == "X" -o "X$glite_vers" == "X3.1" ]; then
+    yaimlog INFO " Build /etc/globus.conf to recognize the lcgsge JobManager"
+    LCGSGE_GLOBUS_FILE=/etc/globus.conf
+    cat <<EOF > ${LCGSGE_GLOBUS_FILE}
+jobmanagers="fork lcgsge"
  
+[gatekeeper/fork]
+type=fork
+job_manager=globus-job-manager
+
 [gatekeeper/lcgsge]
 type=lcgsge
 EOF
 fi
+
+if [ "X$glite_vers" == "X3.0" ]; then
+   yaimlog INFO " Updating /etc/globus.conf to recognize the lcgsge JobManager"
+   LCGSGE_GLOBUS=`grep "\[gatekeeper/lcgsge\]" /etc/globus.conf`
+   if [ "X$LCGSGE_GLOBUS" = "X" ]; then
+       cat <<EOF >> /etc/globus.conf
+   
+[gatekeeper/lcgsge]
+type=lcgsge
+EOF
+   fi
+fi
+
+
+###
+### Build /opt/globus/etc/grid-services/jobmanager-lcgsge
+###
+glite_vers=`echo "$glite_version" | cut -d '.' -f1-2`
+if [ "X$glite_version" == "X" -o "X$glite_vers" == "X3.1" ]; then
+   yaimlog INFO " Configuring jobmanager-lcgsge in /opt/globus/etc/grid-services"
+   LCGSGE_GRIDSERVICES_FILE=${INSTALL_ROOT}/globus/etc/grid-services/jobmanager-lcgsge
+   cat <<EOF > ${LCGSGE_GRIDSERVICES_FILE}
+stderr_log,local_cred - /opt/globus/libexec/globus-job-manager globus-job-manager -conf /opt/globus/etc/globus-job-manager.conf -type lcgsge -rdn jobmanager-lcgsge -machine-type unknown -publish-jobs
+EOF
+fi
+
 
 ###
 ### Declare SGE Queues in lcgsge.rvf
@@ -326,6 +372,14 @@ SGE_INFOPROVIDER=$INSTALL_ROOT/lcg/libexec/lcg-info-dynamic-sge
 if [ ! -e $SGE_INFOPROVIDER ]; then
    yaimlog ERROR " SGE InfoProvider is not installed !!! Without it the information system will not work..."
    yaimlog ERROR " SGE InfoProvider configuration will continue... SGE information system will work after lcg-info-dynamic-sge is installed and without re-configuration..."
+else
+   yaimlog INFO " Check SGE dynamic information plugin file permissions"
+   if [ -x $SGE_INFOPROVIDER ]; then
+      yaimlog INFO " $SGE_INFOPROVIDER has correct permissions"
+   else
+      yaimlog INFO " $SGE_INFOPROVIDER does not has the correct permissions. Changing them ..."
+      chmod +x $SGE_INFOPROVIDER
+   fi
 fi
 
 if [ ! -d $SGE_INFOPROVIDER_DIR ]; then
@@ -498,7 +552,6 @@ CE_PLUGIN_FILE=${INSTALL_ROOT}/glite/etc/gip/plugin/glite-info-dynamic-ce
 if [ -e $CE_PLUGIN_FILE ]; then
    rm -f $CE_PLUGIN_FILE
 fi 
-
 plugin=${INSTALL_ROOT}/lcg/libexec/lcg-info-dynamic-sge
 cat <<EOF > $CE_PLUGIN_FILE
 #!/bin/sh
@@ -508,7 +561,7 @@ EOF
 chmod +x ${INSTALL_ROOT}/glite/etc/gip/plugin/glite-info-dynamic-ce
 
 ###
-### Include dynamic script in /opt/lcg/etc/lcg-info-generic.conf and restart globus-mds
+### Include dynamic script in /opt/lcg/etc/lcg-info-generic.conf 
 ###
 
 GLITE_INFO_GENERIC_CONF=/opt/glite/etc/gip/glite-info-generic.conf
@@ -532,7 +585,26 @@ else
    mv -f /opt/glite/etc/gip/glite-info-generic.conf.tmp /opt/glite/etc/gip/glite-info-generic.conf
 fi
 
-/etc/init.d/globus-mds stop
-/etc/init.d/globus-mds start
+
+###
+### Restart information system
+###
+
+if [ "X$glite_version" == "X" ]; then
+   /etc/init.d/bdii stop
+   /etc/init.d/bdii start
+fi
+if [ "X$glite_version" != "X" ]; then
+   glite_vers=`echo "$glite_version" | cut -d '.' -f1-2`
+   if [ "X$glite_vers" == "X3.0" ]; then
+      /etc/init.d/globus-mds stop
+      /etc/init.d/globus-mds start
+   elif [ "X$glite_vers" == "X3.1" ]; then
+      /etc/init.d/bdii stop
+      /etc/init.d/bdii start
+   fi
+fi
+
+
 }
 
