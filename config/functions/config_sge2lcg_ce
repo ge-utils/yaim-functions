@@ -23,7 +23,7 @@
 #
 # AUTHORS     : goncalo@lip.pt
 #
-# NOTES       : - Tested in SGE V60u7_1.
+# NOTES       : - Tested in SGE V60u7_1, V61u3
 #             : - Configures the SGE infoprovider and SGE JobManager
 #
 # YAIM MODULE : glite-yaim-sge-utils

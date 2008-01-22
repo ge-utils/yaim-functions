@@ -29,10 +29,11 @@ make install prefix=%{buildroot}%{prefix}
 %files
 %defattr(0644,root,root)
 %{prefix}/yaim/functions/config_*
+%config(noreplace) %{prefix}/yaim/node-info.d/glite*
 %{prefix}/yaim/node-info.d/glite-*
 %{prefix}/yaim/examples/siteinfo/services/glite-* 
+/usr/share/man/man1/yaim-sge-utils.1
 %doc LICENSE
-
 
 %clean
 rm -rf %{buildroot}
