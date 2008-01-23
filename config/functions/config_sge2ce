@@ -15,9 +15,9 @@
 # limitations under the License.
 ##############################################################################
 #
-# NAME        : config_sge2lcg_ce_30
+# NAME        : config_sge2ce
 #
-# DESCRIPTION : This function enables an lcg-CE 3.0 to work as a SGE submission host, 
+# DESCRIPTION : This function enables an lcg-CE 3.1 to work as a SGE submission host, 
 #               being able to query/interact with the SGE QMASTER host (which may 
 #               be working in a different machine)
 #
@@ -31,18 +31,18 @@
 ##############################################################################
 
 
-function config_sge2lcg_ce_30_check(){
+function config_sge2ce_check(){
     requires $1 QUEUES SGE_ROOT SGE_CELL BATCH_SERVER MY_DOMAIN
     return $?
 }
 
 
-function config_sge2lcg_ce_30_setenv(){
+function config_sge2ce_setenv(){
     return 0
 }
 
 
-function config_sge2lcg_ce_30(){
+function config_sge2ce(){
 
 INSTALL_ROOT=${INSTALL_ROOT:-/opt}
 
@@ -53,10 +53,10 @@ yaimlog DEBUG "### Get gLite version "
 yaimlog DEBUG "###"
 
 glite_version=`echo /opt/glite/bin/glite-version | cut -d '.' -f1-2`
-if [ "X$glite_version" == "X3.0" ]; then
-   yaimlog INFO "Running SGE configuration for gLite version 3.0"
-elif [ "X$glite_version" == "X" -o "X$glite_version" != "3.0" ]; then
-   yaimlog ABORT "gLite version not supported. Exiting..."
+if [ "X$glite_version" == "X3.1" ]; then
+   yaimlog INFO "Running SGE configuration for gLite version >= 3.1"
+elif [ "X$glite_version" == "X" -or "X$glite_version" != "3.1" ]; then 
+   yaimlog ABORT "gLite version not supported. Exiting..."  
    exit 1
 fi
 
@@ -239,7 +239,6 @@ SERVICES_FILE=/etc/services
 yaimlog INFO \
 yaimlog INFO " Configuring sgemaster daemon in $SERVICES_FILE"
 PORT1="X"`grep "536/tcp" $SERVICES_FILE | grep -v sge`
-echo "PORT1"
 if [ "${PORT1}" != "X" ]; then
      yaimlog ABORT " Port 536/tcp is already used by other service. Check $SERVICES_FILE"
      exit 1
@@ -316,97 +315,6 @@ cat <<EOF > $SGE_JOBMANAGER_CONF
 # Extra parameters not available in the jdl file.
 #\$EXTRA          = 'h_fsize=5G,s_cpu=0:10:0';
 \$EXTRA          = '';
-EOF
-
-#---*---
-
-yaimlog DEBUG "###"
-yaimlog DEBUG "### Add JobManager to /etc/globus.conf"
-yaimlog DEBUG "###"
-
-#LCGSGE_GLOBUS_FILE=/etc/globus.conf
-#if [ "X$glite_version" == "X" -o "X$glite_version" == "X3.1" ]; then
-#   yaimlog INFO " Build /etc/globus.conf to recognize the lcgsge JobManager"
-#   LCGSGE_GLOBUS_FILE=/etc/globus.conf
-#   cat <<EOF > ${LCGSGE_GLOBUS_FILE}
-#jobmanagers="fork lcgsge"
-# 
-#[gatekeeper/fork]
-#type=fork
-#job_manager=globus-job-manager
-#
-#[gatekeeper/lcgsge]
-#type=lcgsge
-#EOF
-#fi
-
-yaimlog INFO " Updating /etc/globus.conf to recognize the lcgsge JobManager"
-LCGSGE_GLOBUS=`grep "\[gatekeeper/lcgsge\]" /etc/globus.conf`
-if [ "X$LCGSGE_GLOBUS" = "X" ]; then
-    cat <<EOF >> /etc/globus.conf
-   
-[gatekeeper/lcgsge]
-type=lcgsge
-EOF
-fi
-
-#---*---
-
-#yaimlog DEBUG "###"
-#yaimlog DEBUG "### Build /opt/globus/etc/grid-services/jobmanager-lcgsge"
-#yaimlog DEBUG "###"
-#
-#if [ "X$glite_version" == "X" -o "X$glite_version" == "X3.1" ]; then
-#   yaimlog INFO " Configuring jobmanager-lcgsge in /opt/globus/etc/grid-services"
-#   LCGSGE_GRIDSERVICES_FILE=${INSTALL_ROOT}/globus/etc/grid-services/jobmanager-lcgsge
-#   cat <<EOF > ${LCGSGE_GRIDSERVICES_FILE}
-#stderr_log,local_cred - /opt/globus/libexec/globus-job-manager globus-job-manager -conf /opt/globus/etc/globus-job-manager.conf -type lcgsge -rdn jobmanager-lcgsge -machine-type unknown -publish-jobs
-#EOF
-#fi
-
-#---*---
-
-yaimlog DEBUG "###"
-yaimlog DEBUG "### Declare SGE Queues in lcgsge.rvf"
-yaimlog DEBUG "### This is now commented because it should be done by the lcg-CE"
-yaimlog DEBUG "### config_jobmanager function (see emails from Di Qing (01/09/2008)"
-yaimlog DEBUG "###"
-
-SGE_LCGSGE_RVF=$INSTALL_ROOT/globus/share/globus_gram_job_manager/lcgsge.rvf
-yaimlog INFO " Updating $SGE_LCGSGE_RVF file for SGE queues"
-if [ -e $SGE_LCGSGE_RVF ]; then
-   yaimlog WARNING " $SGE_LCGSGE_RVF already exists. "
-   yaimlog WARNING " Your old configuration will be saved as ${SGE_JOBMANAGER_CONF}.OLD "
-   mv -f $SGE_LCGSGE_RVF ${SGE_LCGSGE_RVF}.OLD
-fi
-
-cat <<EOF > $SGE_LCGSGE_RVF
-Attribute: email_address
-Description: "Set the email address to receive notifications. See the
-             email_on_abort, email_on_execution, and emailontermination attributes."
-ValidWhen: GLOBUS_GRAM_JOB_SUBMIT
-
-Attribute: email_on_abort
-Description: "Send email to the job submitter (or the address specified in the
-             email_address RSL attribute if present) if the job is aborted by the
-             scheduler."
-Values: yes no
-ValidWhen: GLOBUS_GRAM_JOB_SUBMIT
-
-Attribute: email_on_execution
-Description: "Send email to the job submitter (or the address specified in the
-             email_address RSL attribute if present) when the job begins execution."
-Values: yes no
-ValidWhen: GLOBUS_GRAM_JOB_SUBMIT
-
-Attribute: email_on_termination
-Description: "Send email to the job submitter (or the address specified in the
-             email_address RSL attribute if present) when the job terminates."
-Values: yes no
-ValidWhen: GLOBUS_GRAM_JOB_SUBMIT
-
-Attribute: queue
-Values:`echo $QUEUES | sed 's/"//g'`
 EOF
 
 #---*---*---*---*---*---*---*---*---*---*---*---*---*---*---*---*---*---*---*---*---*---
@@ -676,8 +584,8 @@ yaimlog DEBUG "###"
 yaimlog DEBUG "### Restart information system after reconfiguring SGE"
 yaimlog DEBUG "###"
 
-/etc/init.d/globus-mds stop
-/etc/init.d/globus-mds start
+/etc/init.d/bdii stop
+/etc/init.d/bdii start
 
 }
 
