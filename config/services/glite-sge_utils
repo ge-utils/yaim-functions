@@ -1,14 +1,5 @@
 ###########################################  
-# Mandatory parameters for 
-#   services/glite-sge-server
-#   services/glite-sge-client
-#   services/glite-sge-utils 
+# Specific node services file 
+# Overwrites the default values in defaults
+# New env variables can be defined
 ############################################
-
-# SGE instalation path
-SGE_ROOT=/usr/local/sge/pro
-
-# SGE cell name
-SGE_CELL=default
-
-
