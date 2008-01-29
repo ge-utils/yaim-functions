@@ -30,7 +30,7 @@ make install prefix=%{buildroot}%{prefix}
 %defattr(0644,root,root)
 %{prefix}/yaim/functions/*
 %{prefix}/yaim/defaults/*
-%{prefix}/yaim/node-info.d/*
+%config(noreplace) %{prefix}/yaim/node-info.d/glite*
 %{prefix}/yaim/examples/siteinfo/services/glite-* 
 /usr/share/man/man1/yaim-sge-utils.1
 %doc LICENSE
