@@ -1,0 +1,359 @@
+##############################################################################
+# Copyright (c) Members of the EGEE Collaboration. 2004.
+# See http://www.eu-egee.org/partners/ for details on the copyright holders.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##############################################################################
+#
+# NAME        : config_gip_sge
+#
+# DESCRIPTION : Configures the SGE information provider for lcg-CE 3.1
+#
+# AUTHORS     : goncalo@lip.pt
+#
+# NOTES       : - Tested in SGE V60u7_1, V61u3
+#
+# YAIM MODULE : glite-yaim-sge-utils
+#
+##############################################################################
+
+
+function config_gip_sge_check(){
+    requires $1 QUEUES SGE_ROOT SGE_CELL
+    return $?
+}
+
+
+function config_gip_sge_setenv(){
+    return 0
+}
+
+
+function config_gip_sge(){
+
+INSTALL_ROOT=${INSTALL_ROOT:-/opt}
+
+
+yaimlog DEBUG "###"
+yaimlog DEBUG "### Get gLite version "
+yaimlog DEBUG "###"
+
+
+glite_version=`echo /opt/glite/bin/glite-version | cut -d '.' -f1-2`
+if [ "X$glite_version" == "X3.1" ]; then
+   yaimlog INFO "Running InfoProvider SGE configuration for gLite version >= 3.1"
+elif [ "X$glite_version" == "X" -or "X$glite_version" != "3.1" ]; then 
+   yaimlog ABORT "gLite version not supported. Exiting..."  
+   exit 1
+fi
+
+
+yaimlog DEBUG "###"
+yaimlog DEBUG "### Build InfoProvider based on LeSC implementation"
+yaimlog DEBUG "###"
+
+
+yaimlog INFO \
+yaimlog INFO " Installing InfoProvider configuration files "
+SGE_INFOPROVIDER_DIR=/etc/sge-jobmanager
+SGE_INFOPROVIDER_VQUEUES=${SGE_INFOPROVIDER_DIR}/vqueues.conf
+SGE_INFOPROVIDER_REPORTER=${SGE_INFOPROVIDER_DIR}/info-reporter.conf
+SGE_INFOPROVIDER_CLUSTER=${SGE_INFOPROVIDER_DIR}/cluster.state
+
+SGE_INFOPROVIDER=$INSTALL_ROOT/lcg/libexec/lcg-info-dynamic-sge
+if [ ! -e ${SGE_INFOPROVIDER} ]; then
+   yaimlog ABORT " SGE InfoProvider is not installed !!! Without it the information system will not work ! Exiting ... "
+   exit 1
+else
+   yaimlog INFO " Check SGE dynamic information plugin file permissions"
+   if [ -x ${SGE_INFOPROVIDER} ]; then
+      yaimlog INFO " ${SGE_INFOPROVIDER} has correct permissions"
+   else
+      yaimlog INFO " ${SGE_INFOPROVIDER} does not has the correct permissions. Changing them ..."
+      chmod +x $SGE_INFOPROVIDER
+   fi
+fi
+
+if [ ! -d ${SGE_INFOPROVIDER_DIR} ]; then
+   mkdir ${SGE_INFOPROVIDER_DIR}
+fi 
+
+
+yaimlog DEBUG "###"
+yaimlog DEBUG "### Virtual queue configuration file"
+yaimlog DEBUG "###"
+
+
+if [ -e ${SGE_INFOPROVIDER_VQUEUES} ]; then
+   count=`ls -tr ${SGE_INFOPROVIDER_VQUEUES}.OLD* | tail -n 1 | cut -f4 -d"."`
+   if [ "X$count" == "X" ]; then
+       count=0
+   else
+       count=`expr $count + 1`
+   fi
+   yaimlog WARNING " ${SGE_INFOPROVIDER_VQUEUES} exists. Your old file will be saved as ${SGE_INFOPROVIDER_VQUEUES}.OLD.${count}"
+   mv -f ${SGE_INFOPROVIDER_VQUEUES} ${SGE_INFOPROVIDER_VQUEUES}.OLD.${count}
+fi
+yaimlog INFO " Creating $SGE_INFOPROVIDER_VQUEUES file..."
+cat <<EOF_SGE_INFOPROVIDER_VQUEUES >> ${SGE_INFOPROVIDER_VQUEUES}
+#
+# SGE JobManager queue mapping file
+#
+# It is sometimes desirable to be able to override various RSL properties of
+# jobs submitted to Globus based on the name of the queue that was requested.
+#
+# For example, LCG 2_6_0 resource brokers only allow an end user to specify
+# a particular queue or set of queues for a job to be submitted to, but not
+# to specify any other details about the job, such as how long it will take
+# to execute.
+#
+# This file allows you to override the properties of a job based on the name
+# of the logical queue that it was submitted to.
+#
+# Set of properties you can manipulate:
+# ------------------------------------
+# queue:                Set the target queue to submit to.
+#                       NOTE: All property matches will match against the
+#                             originally specified queue, not the new queue.
+# max_cpu_time:         Hard CPU time limit, in minutes.
+# max_wall_time:        Hard wallclock time limit, in minutes.
+#
+# (There is undocumented support for other fields.)
+#
+# Spaces are currently not permitted as any value.
+#
+# Virtual
+# Queue         Property                New Value
+# --------------------------------------------------
+EOF_SGE_INFOPROVIDER_VQUEUES
+
+for QUEUE in `echo $QUEUES | sed 's/"//g'` ; do
+   cat <<EOF_SGE_INFOPROVIDER_VQUEUES >> $SGE_INFOPROVIDER_VQUEUES
+$QUEUE          queue                   $QUEUE
+EOF_SGE_INFOPROVIDER_VQUEUES
+done
+
+
+yaimlog DEBUG "###"
+yaimlog DEBUG "### Reporter configuration file"
+yaimlog DEBUG "###"
+
+
+if [ -e ${SGE_INFOPROVIDER_REPORTER} ]; then
+   count=`ls -tr ${SGE_INFOPROVIDER_REPORTER}.OLD* | tail -n 1 | cut -f4 -d"."`
+   if [ "X$count" == "X" ]; then
+       count=0
+   else
+       count=`expr $count + 1`
+   fi
+   yaimlog WARNING " ${SGE_INFOPROVIDER_REPORTER} exists. Your old file will be saved as ${SGE_INFOPROVIDER_REPORTER}.OLD.${count}"
+   mv -f ${SGE_INFOPROVIDER_REPORTER} ${SGE_INFOPROVIDER_REPORTER}.OLD.${count}
+fi
+yaimlog INFO " Creating $SGE_INFOPROVIDER_REPORTER file..."
+cat <<EOF_SGE_INFOPROVIDER_REPORTER >> ${SGE_INFOPROVIDER_REPORTER}
+#
+# Sample configuration file for SGE information reporter
+# ======================================================
+#
+# The default location of this file is /etc/sge-jobmanager/info-reporter.conf
+# however this can be overriden on the command line
+
+# Default values are shown below
+
+##############################################################################
+# SGE Environment Variables...
+
+SGE_ROOT = $SGE_ROOT
+SGE_ARCH = `$SGE_ROOT/util/arch`
+SGE_CELL = $SGE_CELL
+
+##############################################################################
+# Override location of SGE commands...
+# The default values are calculated using the environment variables above
+# so these configuration values shouldn't normally need to be specified
+
+# qconf_command =
+# qstat_command =
+# qselect_command =
+
+##############################################################################
+# Location of static LDIF file...
+
+ldif_file = $INSTALL_ROOT/glite/etc/gip/ldif/static-file-CE.ldif
+
+##############################################################################
+# Location of SGE jobmanager virtual queue mapping configuration file
+
+vqueue_file = /etc/sge-jobmanager/vqueues.conf
+
+##############################################################################
+# Location of file defining current cluster state
+# This file should contain one of the following strings:
+#     Production, Draining, Queueing, Closed
+
+state_file = /etc/sge-jobmanager/cluster.state
+
+##############################################################################
+# Regular expressions matching SGE "queue instances" (ie: queue@hostname)
+# that should be included/excluded from our calculations...
+#
+# Default is to include everything and exclude nothing
+# Specifying these values may distort the estimated response times
+
+# queue_include_regexp = ^.*$
+# queue_exclude_regexp =
+
+##############################################################################
+# Regular expressions matching usernames that should be included/excluded
+# from our calculations
+#
+# Default is to include everything and exclude nothing
+# Specifying these values may distort the estimated response times
+
+# user_include_regexp = ^.*$
+# user_exclude_regexp =
+
+##############################################################################
+# Job efficiency
+# Used to convert cpu-time limits into estimated wallclock runtimes
+# eg:  1.0 would specify that jobs typically run at 100% efficiency
+#          and therefore the wallclock runtime equals the cpu time
+#      0.6 would specify that jobs typically only run at 60% efficiency
+
+# job_efficiency = 0.9
+
+##############################################################################
+# Default duration of jobs for which a time limit cannot be determined
+# Can be specified as <seconds>, <hours>:<minutes>:<seconds>
+#     or <days>:<hours>:<minutes>:<seconds>
+
+# default_duration = 7:00:00:00
+
+##############################################################################
+# Configuration options for mapping logins/groups to VOs...
+# 
+# passwd_file & group_file should only be specified if you DON'T want to
+# use perl's built-in functions for looking up login names and groups
+#
+# eg: because the accounts don't exist on the machine on which the
+#     information provider is being run
+
+# passwd_file=/etc/passwd
+# group_file=/etc/group
+
+# The following is only required where members of a VO have a login group
+# that is different from the name of the VO
+#
+# group <group>=<vo>          eg:  group ngs=ngs.ac.uk
+
+# The following is only required where the VO mapping needs to be overriden
+# on a per-login basis
+#
+#
+# login <login>=<vo>          eg:  login ngs001=ngs.ac.uk
+
+##############################################################################
+# File in which to capture information used by the information reporter
+# to generate its results.
+# Information from this file can be converted into test data to allow the
+# calculations to be replayed for debugging/development purposes
+# Once created, the file will not be overwritten
+# If a fresh capture is required, then the filename should be changed
+# or the file should be deleted
+
+# capture_file = capture_file_22012007
+EOF_SGE_INFOPROVIDER_REPORTER
+
+
+yaimlog DEBUG "###"
+yaimlog DEBUG "### Cluster Status "
+yaimlog DEBUG "###"
+
+yaimlog INFO " Set Cluster status to Production..."
+rm -f $SGE_INFOPROVIDER_CLUSTER
+cat <<EOF_SGE_INFOPROVIDER_CLUSTER >> ${SGE_INFOPROVIDER_CLUSTER}
+Production
+EOF_SGE_INFOPROVIDER_CLUSTER
+
+
+yaimlog DEBUG "###"
+yaimlog DEBUG "### CE Plugin File"
+yaimlog DEBUG "###"
+
+
+yaimlog INFO " Configure SGE dynamic information plugin"
+CE_PLUGIN_FILE=${INSTALL_ROOT}/glite/etc/gip/plugin/glite-info-dynamic-ce
+if [ -e ${CE_PLUGIN_FILE} ]; then
+   rm -f ${CE_PLUGIN_FILE}
+fi 
+plugin=${INSTALL_ROOT}/lcg/libexec/lcg-info-dynamic-sge
+cat <<EOF_CE_PLUGIN_FILE > ${CE_PLUGIN_FILE}
+#!/bin/sh
+$plugin
+EOF_CE_PLUGIN_FILE
+
+chmod +x ${INSTALL_ROOT}/glite/etc/gip/plugin/glite-info-dynamic-ce
+
+
+yaimlog DEBUG "###"
+yaimlog DEBUG "### Include dynamic script in /opt/lcg/etc/lcg-info-generic.conf"
+yaimlog DEBUG "###"
+
+GLITE_INFO_GENERIC_CONF=/opt/glite/etc/gip/glite-info-generic.conf
+yaimlog INFO " Configuring ${SGE_INFOPROVIDER} in ${GLITE_INFO_GENERIC_CONF} as dynamic script"
+
+if [ ! -e ${GLITE_INFO_GENERIC_CONF} ]; then
+   yaimlog ABORT " $GLITE_INFO_GENERIC_CONF does not exist"
+   exit 1
+fi
+
+dynamic_script_exists=`grep dynamic_script ${GLITE_INFO_GENERIC_CONF}`
+if [ "X$dynamic_script_exists" == "X"  ]; then
+   echo "dynamic_script = /opt/lcg/libexec/lcg-info-dynamic-sge" > /opt/glite/etc/gip/glite-info-generic.conf.tmp
+   cat /opt/glite/etc/gip/glite-info-generic.conf >> /opt/glite/etc/gip/glite-info-generic.conf.tmp
+   mv -f /opt/glite/etc/gip/glite-info-generic.conf.tmp /opt/glite/etc/gip/glite-info-generic.conf
+else
+   yaimlog WARNING " A dynamic script is already configured in ${GLITE_INFO_GENERIC_CONF}"
+   yaimlog WARNING " Rewritting current implementation \"$dynamic_script_exists\" "
+   echo "dynamic_script = /opt/lcg/libexec/lcg-info-dynamic-sge" > /opt/glite/etc/gip/glite-info-generic.conf.tmp
+   cat /opt/glite/etc/gip/glite-info-generic.conf | grep -v dynamic_script >> /opt/glite/etc/gip/glite-info-generic.conf.tmp 
+   mv -f /opt/glite/etc/gip/glite-info-generic.conf.tmp /opt/glite/etc/gip/glite-info-generic.conf
+fi
+
+
+yaimlog DEBUG "###"
+yaimlog DEBUG "### Comment the content of glite-info-dynamic-scheduler-wrapper"
+yaimlog DEBUG "###"
+
+
+yaimlog INFO " Comment the content of glite-info-dynamic-scheduler-wrapper. Not used in SGE"
+CE_SCHEDULER_WRAPPER_FILE=${INSTALL_ROOT}/glite/etc/gip/plugin/glite-info-dynamic-scheduler-wrapper
+if [ -e ${CE_SCHEDULER_WRAPPER_FILE} ]; then
+   rm -f ${CE_SCHEDULER_WRAPPER_FILE}
+fi
+cat <<EOF_CE_SCHEDULER_WRAPPER_FILE > ${CE_SCHEDULER_WRAPPER_FILE}
+#!/bin/sh
+# /opt/lcg/libexec/lcg-info-dynamic-scheduler -c /opt/glite/etc/lcg-info-dynamic-scheduler.conf
+EOF_CE_SCHEDULER_WRAPPER_FILE
+
+
+yaimlog DEBUG "###"
+yaimlog DEBUG "### Restart information system after reconfiguring SGE"
+yaimlog DEBUG "###"
+
+
+/etc/init.d/bdii stop
+/etc/init.d/bdii start
+
+}
+

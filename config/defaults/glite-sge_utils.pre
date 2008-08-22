@@ -8,3 +8,8 @@
 SGE_ROOT=/usr/local/sge/pro
 # SGE cell name
 SGE_CELL=default
+# Port used to contact SGE QMASTER
+SGE_QMASTER=536
+# Port used to contact SGE EXECD 
+SGE_EXECD=537
+

@@ -1,3 +1,5 @@
 SGE_utils_FUNCTIONS="
 config_apel_sge
-config_sge2ce_30"
+config_sge2ce
+config_lcgsge_30
+config_gip_sge_30"

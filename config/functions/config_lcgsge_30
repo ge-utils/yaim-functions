@@ -1,0 +1,190 @@
+##############################################################################
+# Copyright (c) Members of the EGEE Collaboration. 2004.
+# See http://www.eu-egee.org/partners/ for details on the copyright holders.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##############################################################################
+#
+# NAME        : config_lcgsge_30
+#
+# DESCRIPTION : This function implements the lcgsge Job Manager for lcg-CE 3.0 
+#
+# AUTHORS     : goncalo@lip.pt
+#
+# NOTES       : - Tested in SGE V60u7_1, V61u3
+#             : - Configures the SGE infoprovider and SGE JobManager
+#
+# YAIM MODULE : glite-yaim-sge-utils
+#
+##############################################################################
+
+
+function config_lcgsge_30_check(){
+    requires $1 QUEUES SGE_ROOT SGE_CELL
+    return $?
+}
+
+
+function config_lcgsge_30_setenv(){
+    return 0
+}
+
+
+function config_lcgsge_30(){
+
+INSTALL_ROOT=${INSTALL_ROOT:-/opt}
+
+yaimlog DEBUG "###"
+yaimlog DEBUG "### Get gLite version "
+yaimlog DEBUG "###"
+
+glite_version=`echo /opt/glite/bin/glite-version | cut -d '.' -f1-2`
+if [ "X$glite_version" == "X3.0" ]; then
+   yaimlog INFO "Running SGE configuration for gLite version 3.0"
+elif [ "X$glite_version" == "X" -o "X$glite_version" != "3.0" ]; then
+   yaimlog ABORT "gLite version not supported. Exiting..."
+   exit 1
+fi
+
+yaimlog DEBUG "###"
+yaimlog DEBUG "### Build JobManager configuration files"
+yaimlog DEBUG "### Fully based on CESGA implementation"
+yaimlog DEBUG "###"
+
+yaimlog INFO \ 
+yaimlog INFO " Building SGE JobManager configuration files"
+
+SGE_JOBMANAGER=$INSTALL_ROOT/globus/lib/perl/Globus/GRAM/JobManager/lcgsge.pm
+if [ ! -e ${SGE_JOBMANAGER} ]; then
+   yaimlog ABORT " ${SGE_JOBMANAGER} is not installed !!! Without it job management will not work!!! Exiting..."
+   exit 1
+fi
+
+#---*---
+
+yaimlog DEBUG "###"
+yaimlog DEBUG "### SGE JM configuration file"
+yaimlog DEBUG "###"
+
+SGE_JOBMANAGER_CONF=$INSTALL_ROOT/globus/lib/perl/Globus/GRAM/JobManager/lcgsge.conf
+yaimlog INFO " Installing SGE Job manager configuration files" 
+if [ -e ${SGE_JOBMANAGER_CONF} ]; then
+   count=`ls -tr ${SGE_JOBMANAGER_CONF}.OLD* | tail -n 1 | cut -f4 -d"."`
+   if [ "X$count" == "X" ]; then
+       count=0
+   else
+       count=`expr $count + 1`
+   fi
+   yaimlog WARNING " ${SGE_JOBMANAGER_CONF} exists. Your old file will be saved as ${SGE_JOBMANAGER_CONF}.OLD.${count}"
+   mv -f ${SGE_JOBMANAGER_CONF} ${SGE_JOBMANAGER_CONF}.OLD.${count}
+fi
+cat <<EOF_SGE_JOBMANAGER_CONF > $SGE_JOBMANAGER_CONF
+# SGE JM Configuration File
+#
+# SGE paths
+\$SGE_BASE_PATH    = '$SGE_ROOT';
+\$SGE_BIN_PATH     = '$SGE_ROOT/bin/$ARCH';
+# Default values for SGE required complex values
+# In case SGE forces to specify a given set of parameters you can
+# specify the default values in this section
+# If you don't need to define some parameter you should to set it
+# to an empty string or to 0. 
+# Parameters that could be availables in the jdl file
+# These values are only use in case a value is not specified
+# in the jdl file
+# max cpu time
+#\$S_RT           = '10:00:00';
+\$S_RT            = '';
+# max memory
+#\$S_VMEM         = '512M';
+\$S_VMEM          = '';
+# number of processors
+#\$NUM_PROC       = 1;
+\$NUM_PROC        = 0;
+# Extra parameters not available in the jdl file.
+#\$EXTRA          = 'h_fsize=5G,s_cpu=0:10:0';
+\$EXTRA          = '';
+EOF_SGE_JOBMANAGER_CONF
+
+#---*---
+
+yaimlog DEBUG "###"
+yaimlog DEBUG "### Add JobManager to /etc/globus.conf"
+yaimlog DEBUG "###"
+
+yaimlog INFO " Updating /etc/globus.conf to recognize the lcgsge JobManager"
+LCGSGE_GLOBUS=`grep "\[gatekeeper/lcgsge\]" /etc/globus.conf`
+if [ "X${LCGSGE_GLOBUS}" = "X" ]; then
+    cat <<EOF >> /etc/globus.conf
+   
+[gatekeeper/lcgsge]
+type=lcgsge
+EOF
+fi
+
+strg1=`grep jobmanagers /etc/globus.conf`
+strg2="jobmanagers=\"fork lcgsge\""
+if [ "X$strg1" != "X$strg2" ]; then 
+        sed "s/$string/$string2/g" /etc/globus.conf > /tmp/globus.conf
+        mv -f /tmp/globus.conf /etc/globus.conf
+fi
+
+#---*---
+
+yaimlog DEBUG "###"
+yaimlog DEBUG "### Declare SGE Queues in lcgsge.rvf"
+yaimlog DEBUG "###"
+
+SGE_LCGSGE_RVF=$INSTALL_ROOT/globus/share/globus_gram_job_manager/lcgsge.rvf
+yaimlog INFO " Updating ${SGE_LCGSGE_RVF} file for SGE queues"
+if [ -e ${SGE_LCGSGE_RVF} ]; then
+   count=`ls -tr ${SGE_LCGSGE_RVF}.OLD* | tail -n 1 | cut -f4 -d"."`
+   if [ "X$count" == "X" ]; then
+       count=0
+   else
+       count=`expr $count + 1`
+   fi
+   yaimlog WARNING " ${SGE_LCGSGE_RVF} exists. Your old file will be saved as ${SGE_LCGSGE_RVF}.OLD.${count}"
+   mv -f ${SGE_LCGSGE_RVF} ${SGE_LCGSGE_RVF}.OLD.${count}
+fi
+cat <<EOF_SGE_LCGSGE_RVF > ${SGE_LCGSGE_RVF}
+Attribute: email_address
+Description: "Set the email address to receive notifications. See the
+             email_on_abort, email_on_execution, and emailontermination attributes."
+ValidWhen: GLOBUS_GRAM_JOB_SUBMIT
+
+Attribute: email_on_abort
+Description: "Send email to the job submitter (or the address specified in the
+             email_address RSL attribute if present) if the job is aborted by the
+             scheduler."
+Values: yes no
+ValidWhen: GLOBUS_GRAM_JOB_SUBMIT
+
+Attribute: email_on_execution
+Description: "Send email to the job submitter (or the address specified in the
+             email_address RSL attribute if present) when the job begins execution."
+Values: yes no
+ValidWhen: GLOBUS_GRAM_JOB_SUBMIT
+
+Attribute: email_on_termination
+Description: "Send email to the job submitter (or the address specified in the
+             email_address RSL attribute if present) when the job terminates."
+Values: yes no
+ValidWhen: GLOBUS_GRAM_JOB_SUBMIT
+
+Attribute: queue
+Values:`echo $QUEUES | sed 's/"//g'`
+EOF_SGE_LCGSGE_RVF
+
+}
+

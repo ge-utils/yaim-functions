@@ -10,9 +10,6 @@ Group: EGEE
 Source: %{name}.src.tgz
 BuildArch: noarch
 Prefix: /opt/glite
-Requires: glite-info-generic >= 2.0.2-2
-Requires: glite-yaim-core >= 4.0.1-1
-Requires: glite-yaim-lcg-ce >= 4.0.3-3
 BuildRoot: %{_tmppath}/%{name}-%{version}-build
 Packager: EGEE
 
@@ -30,6 +27,7 @@ make install prefix=%{buildroot}%{prefix}
 %defattr(0644,root,root)
 %{prefix}/yaim/functions/*
 %{prefix}/yaim/defaults/*
+%{prefix}/yaim/etc/versions/%{name}
 %config(noreplace) %{prefix}/yaim/node-info.d/glite*
 %{prefix}/yaim/examples/siteinfo/services/glite-* 
 /usr/share/man/man1/yaim-sge-utils.1
@@ -37,4 +35,3 @@ make install prefix=%{buildroot}%{prefix}
 
 %clean
 rm -rf %{buildroot}
-

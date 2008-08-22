@@ -13,19 +13,21 @@ all: configure
 install: 
 	@echo installing ...
 	@mkdir -p $(prefix)/yaim/functions/
-	@mkdir -p $(prefix)/yaim/node-info.d/
 	@mkdir -p $(prefix)/yaim/defaults/
+	@mkdir -p $(prefix)/yaim/node-info.d/
 	@mkdir -p $(prefix)/yaim/examples/
 	@mkdir -p $(prefix)/yaim/examples/siteinfo/
 	@mkdir -p $(prefix)/yaim/examples/siteinfo/services/
 	@mkdir -p ${RPM_BUILD_ROOT}/usr/share/man/man1
-        
+	@mkdir -p $(prefix)/yaim/etc/versions
+
 	@install -m 0644 config/functions/config* $(prefix)/yaim/functions/
 	@install -m 0644 config/defaults/glite* $(prefix)/yaim/defaults/
 	@install -m 0644 config/node-info.d/glite* $(prefix)/yaim/node-info.d/
 	@install -m 0644 config/services/glite* $(prefix)/yaim/examples/siteinfo/services/
 	@install -m 0644 config/man/yaim-sge-utils.1 ${RPM_BUILD_ROOT}/usr/share/man/man1/
 
+	@echo "$(package) $(version)-$(release)" > $(prefix)/yaim/etc/versions/$(package)
 clean:
 	rm -f *~ test/*~ etc/*~ doc/*~ src/*~  
 	rm -rf rpmbuild 
