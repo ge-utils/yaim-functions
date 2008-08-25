@@ -45,7 +45,6 @@ function config_sge2ce(){
 
 INSTALL_ROOT=${INSTALL_ROOT:-/opt}
 
-
 yaimlog DEBUG "###"
 yaimlog DEBUG "### Create SGE directories and paths"
 yaimlog DEBUG "###"
@@ -133,13 +132,12 @@ EOF_SGE_CSHENV_FILE
 SGE_SHSETTING_FILE=${SGE_ROOT}/${SGE_CELL}/common/settings.sh
 yaimlog INFO " Check if ${SGE_SHSETTING_FILE} exists. If not, create it!"
 if [ -e ${SGE_SHSETTING_FILE} ]; then
-   count=`ls -tr ${SGE_SHSETTING_FILE}.OLD* | tail -n 1 | cut -f4 -d"."`
+   count=`ls -tr ${SGE_SHSETTING_FILE}.OLD* 2>/dev/null | tail -n 1 | cut -f4 -d"."`
    if [ "X$count" == "X" ]; then
        count=0
    else
        count=`expr $count + 1`
    fi
-   yaimlog WARNING " ${SGE_SHSETTING_FILE} exists. Your old file will be saved as ${SGE_SHSETTING_FILE}.OLD.${count}"
    mv -f ${SGE_SHSETTING_FILE} ${SGE_SHSETTING_FILE}.OLD.${count}
 fi
 cat <<EOF_SGE_SHSETTING_FILE > ${SGE_SHSETTING_FILE}
@@ -169,17 +167,25 @@ EOF_SGE_SHSETTING_FILE
 chmod 644 ${SGE_SHSETTING_FILE}
 source ${SGE_SHENV_FILE}
 
+if [ "X$count" != "X" ]; then
+   diff ${SGE_SHSETTING_FILE}.OLD.${count} ${SGE_SHSETTING_FILE} > /dev/null 2>&1
+fi
+if [ $? == 0 ]; then
+     rm -f ${SGE_SHSETTING_FILE}.OLD.${count}
+else
+     yaimlog WARNING " ${SGE_SHSETTING_FILE} exists. Your old file will be saved as ${SGE_SHSETTING_FILE}.OLD.${count}"
+fi
+count=""
 
 SGE_CSHSETTING_FILE=${SGE_ROOT}/${SGE_CELL}/common/settings.csh
 yaimlog INFO " Check if ${SGE_CSHSETTING_FILE} exists. If not, create it!"
 if [ -e ${SGE_CSHSETTING_FILE} ]; then
-   count=`ls -tr ${SGE_CSHSETTING_FILE}.OLD* | tail -n 1 | cut -f4 -d"."`
+   count=`ls -tr ${SGE_CSHSETTING_FILE}.OLD* 2>/dev/null | tail -n 1 | cut -f4 -d"."`
    if [ "X$count" == "X" ]; then
        count=0
    else
        count=`expr $count + 1`
    fi
-   yaimlog WARNING " ${SGE_CSHSETTING_FILE} exists. Your old file will be saved as ${SGE_SHSETTING_FILE}.OLD.${count}"
    mv -f ${SGE_CSHSETTING_FILE} ${SGE_CSHSETTING_FILE}.OLD.${count}
 fi
 cat <<EOF_SGE_CSHSETTING_FILE > ${SGE_CSHSETTING_FILE}
@@ -209,6 +215,16 @@ endif
 unset ARCH DEFAULTMANPATH MANTYPE shlib_path_name
 EOF_SGE_CSHSETTING_FILE
 chmod 644 ${SGE_CSHSETTING_FILE}
+
+if [ "X$count" != "X" ]; then
+   diff ${SGE_CSHSETTING_FILE}.OLD.${count} ${SGE_CSHSETTING_FILE} > /dev/null 2>&1
+fi
+if [ $? == 0 ]; then
+     rm -f ${SGE_CSHSETTING_FILE}.OLD.${count}
+else
+     yaimlog WARNING " ${SGE_CSHSETTING_FILE} exists. Your old file will be saved as ${SGE_CSHSETTING_FILE}.OLD.${count}"
+fi
+count=""
 
 #---*---
 

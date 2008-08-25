@@ -44,8 +44,6 @@ function config_lcgsge(){
 
 INSTALL_ROOT=${INSTALL_ROOT:-/opt}
 
-#---*---
-
 yaimlog DEBUG "###"
 yaimlog DEBUG "### Get gLite version "
 yaimlog DEBUG "###"
@@ -83,13 +81,13 @@ yaimlog DEBUG "###"
 SGE_JOBMANAGER_CONF=$INSTALL_ROOT/globus/lib/perl/Globus/GRAM/JobManager/lcgsge.conf
 yaimlog INFO " Installing SGE Job manager configuration files" 
 if [ -e ${SGE_JOBMANAGER_CONF} ]; then
-   count=`ls -tr ${SGE_JOBMANAGER_CONF}.OLD* | tail -n 1 | cut -f4 -d"."`
+   count=`ls -tr ${SGE_JOBMANAGER_CONF}.OLD* 2>/dev/null | tail -n 1 | cut -f4 -d"."`
    if [ "X$count" == "X" ]; then
        count=0
    else
        count=`expr $count + 1`
    fi
-   yaimlog WARNING " ${SGE_JOBMANAGER_CONF} exists. Your old file will be saved as ${SGE_JOBMANAGER_CONF}.OLD.${count}"
+   # yaimlog WARNING " ${SGE_JOBMANAGER_CONF} exists. Your old file will be saved as ${SGE_JOBMANAGER_CONF}.OLD.${count}"
    mv -f ${SGE_JOBMANAGER_CONF} ${SGE_JOBMANAGER_CONF}.OLD.${count}
 fi
 cat <<EOF_SGE_JOBMANAGER_CONF > ${SGE_JOBMANAGER_CONF}
@@ -119,6 +117,16 @@ cat <<EOF_SGE_JOBMANAGER_CONF > ${SGE_JOBMANAGER_CONF}
 #\$EXTRA          = 'h_fsize=5G,s_cpu=0:10:0';
 \$EXTRA          = '';
 EOF_SGE_JOBMANAGER_CONF
+
+if [ "X$count" != "X" ]; then 
+   diff ${SGE_JOBMANAGER_CONF}.OLD.${count} ${SGE_JOBMANAGER_CONF} > /dev/null 2>&1 
+fi
+if [ $? == 0 ]; then
+     rm -f ${SGE_JOBMANAGER_CONF}.OLD.${count}
+else
+     yaimlog WARNING " ${SGE_JOBMANAGER_CONF} exists. Your old file will be saved as ${SGE_JOBMANAGER_CONF}.OLD.${count}"
+fi
+count=""
 
 }
 

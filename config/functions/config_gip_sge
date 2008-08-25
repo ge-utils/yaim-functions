@@ -43,7 +43,6 @@ function config_gip_sge(){
 
 INSTALL_ROOT=${INSTALL_ROOT:-/opt}
 
-
 yaimlog DEBUG "###"
 yaimlog DEBUG "### Get gLite version "
 yaimlog DEBUG "###"
@@ -95,13 +94,12 @@ yaimlog DEBUG "###"
 
 
 if [ -e ${SGE_INFOPROVIDER_VQUEUES} ]; then
-   count=`ls -tr ${SGE_INFOPROVIDER_VQUEUES}.OLD* | tail -n 1 | cut -f4 -d"."`
+   count=`ls -tr ${SGE_INFOPROVIDER_VQUEUES}.OLD* 2>/dev/null | tail -n 1 | cut -f4 -d"."`
    if [ "X$count" == "X" ]; then
        count=0
    else
        count=`expr $count + 1`
    fi
-   yaimlog WARNING " ${SGE_INFOPROVIDER_VQUEUES} exists. Your old file will be saved as ${SGE_INFOPROVIDER_VQUEUES}.OLD.${count}"
    mv -f ${SGE_INFOPROVIDER_VQUEUES} ${SGE_INFOPROVIDER_VQUEUES}.OLD.${count}
 fi
 yaimlog INFO " Creating $SGE_INFOPROVIDER_VQUEUES file..."
@@ -137,6 +135,16 @@ cat <<EOF_SGE_INFOPROVIDER_VQUEUES >> ${SGE_INFOPROVIDER_VQUEUES}
 # --------------------------------------------------
 EOF_SGE_INFOPROVIDER_VQUEUES
 
+if [ "X$count" != "X" ]; then 
+   diff ${SGE_INFOPROVIDER_VQUEUES}.OLD.${count} ${SGE_INFOPROVIDER_VQUEUES} > /dev/null 2>&1 
+fi
+if [ $? == 0 ]; then
+     rm -f ${SGE_INFOPROVIDER_VQUEUES}.OLD.${count}
+else
+     echo " ${SGE_INFOPROVIDER_VQUEUES} exists. Your old file will be saved as ${SGE_INFOPROVIDER_VQUEUES}.OLD.${count}"
+fi
+count=""
+
 for QUEUE in `echo $QUEUES | sed 's/"//g'` ; do
    cat <<EOF_SGE_INFOPROVIDER_VQUEUES >> $SGE_INFOPROVIDER_VQUEUES
 $QUEUE          queue                   $QUEUE
@@ -150,7 +158,7 @@ yaimlog DEBUG "###"
 
 
 if [ -e ${SGE_INFOPROVIDER_REPORTER} ]; then
-   count=`ls -tr ${SGE_INFOPROVIDER_REPORTER}.OLD* | tail -n 1 | cut -f4 -d"."`
+   count=`ls -tr ${SGE_INFOPROVIDER_REPORTER}.OLD* 2>/dev/null | tail -n 1 | cut -f4 -d"."`
    if [ "X$count" == "X" ]; then
        count=0
    else
@@ -274,6 +282,15 @@ state_file = /etc/sge-jobmanager/cluster.state
 # capture_file = capture_file_22012007
 EOF_SGE_INFOPROVIDER_REPORTER
 
+if [ "X$count" != "X" ]; then
+   diff ${SGE_INFOPROVIDER_REPORTER}.OLD.${count} ${SGE_INFOPROVIDER_REPORTER} > /dev/null 2>&1
+fi
+if [ $? == 0 ]; then
+     rm -f ${SGE_INFOPROVIDER_REPORTER}.OLD.${count}
+else
+     echo " ${SGE_INFOPROVIDER_REPORTER} exists. Your old file will be saved as ${SGE_INFOPROVIDER_REPORTER}.OLD.${count}"
+fi
+count=""
 
 yaimlog DEBUG "###"
 yaimlog DEBUG "### Cluster Status "
