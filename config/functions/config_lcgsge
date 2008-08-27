@@ -59,12 +59,8 @@ fi
 #---*---
 
 yaimlog DEBUG "###"
-yaimlog DEBUG "### Build JobManager configuration files"
-yaimlog DEBUG "### Fully based on CESGA implementation"
+yaimlog DEBUG "### Build JobManager configuration files based on CESGA implementation"
 yaimlog DEBUG "###"
-
-yaimlog INFO \ 
-yaimlog INFO " Building SGE JobManager configuration files"
 
 SGE_JOBMANAGER=$INSTALL_ROOT/globus/lib/perl/Globus/GRAM/JobManager/lcgsge.pm
 if [ ! -e ${SGE_JOBMANAGER} ]; then
@@ -72,14 +68,9 @@ if [ ! -e ${SGE_JOBMANAGER} ]; then
    exit 1
 fi
 
-#---*---
-
-yaimlog DEBUG "###"
-yaimlog DEBUG "### SGE JM configuration file"
-yaimlog DEBUG "###"
-
 SGE_JOBMANAGER_CONF=$INSTALL_ROOT/globus/lib/perl/Globus/GRAM/JobManager/lcgsge.conf
-yaimlog INFO " Installing SGE Job manager configuration files" 
+yaimlog INFO \
+yaimlog INFO " Configuring SGE JM conf file: $SGE_JOBMANAGER_CONF"
 if [ -e ${SGE_JOBMANAGER_CONF} ]; then
    count=`ls -tr ${SGE_JOBMANAGER_CONF}.OLD* 2>/dev/null | tail -n 1 | cut -f4 -d"."`
    if [ "X$count" == "X" ]; then
@@ -87,9 +78,9 @@ if [ -e ${SGE_JOBMANAGER_CONF} ]; then
    else
        count=`expr $count + 1`
    fi
-   # yaimlog WARNING " ${SGE_JOBMANAGER_CONF} exists. Your old file will be saved as ${SGE_JOBMANAGER_CONF}.OLD.${count}"
    mv -f ${SGE_JOBMANAGER_CONF} ${SGE_JOBMANAGER_CONF}.OLD.${count}
 fi
+
 cat <<EOF_SGE_JOBMANAGER_CONF > ${SGE_JOBMANAGER_CONF}
 # SGE JM Configuration File
 #
@@ -126,6 +117,7 @@ if [ $? == 0 ]; then
 else
      yaimlog WARNING " ${SGE_JOBMANAGER_CONF} exists. Your old file will be saved as ${SGE_JOBMANAGER_CONF}.OLD.${count}"
 fi
+
 count=""
 
 }

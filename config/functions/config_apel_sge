@@ -47,6 +47,19 @@ echo ${BATCH_LOG_DIR} | sed 's/\//\\\//g' > /tmp/batchacclogs
 BATCH_LOGS_DIR=`cat /tmp/batchacclogs`
 rm -f /tmp/batchacclogs
 
+PARSER-CONFIG-YAIM-FILE=${INSTALL_ROOT}/glite/etc/glite-apel-sge/parser-config-yaim.xml
+yaimlog INFO \
+yaimlog INFO " Installing ${PARSER-CONFIG-YAIM-FILE} configuration file for SGE"
+if [ -e ${PARSER-CONFIG-YAIM-FILE} ]; then
+   count=`ls -tr ${PARSER-CONFIG-YAIM-FILE}.OLD* 2>/dev/null | tail -n 1 | cut -f4 -d"."`
+   if [ "X$count" == "X" ]; then
+       count=0
+   else
+       count=`expr $count + 1`
+   fi
+   mv -f ${PARSER-CONFIG-YAIM-FILE} ${PARSER-CONFIG-YAIM-FILE}.OLD.${count}
+fi
+
 cat ${INSTALL_ROOT}/glite/etc/glite-apel-sge/parser-config.xml | sed \
     -e "s/localhost/${MON_HOST}/" \
     -e "s/<DBUsername>.*/<DBUsername>accounting<\/DBUsername>/" \
@@ -57,18 +70,34 @@ cat ${INSTALL_ROOT}/glite/etc/glite-apel-sge/parser-config.xml | sed \
     -e "s/<GIIS>.*/<GIIS>${CE_HOST}<\/GIIS>/" \
     -e "/<DBDeleteProcessor/d" \
     -e "/<ExtraFile/d" \
-> ${INSTALL_ROOT}/glite/etc/glite-apel-sge/parser-config-yaim.xml
+> ${PARSER-CONFIG-YAIM-FILE}
 
+if [ "X$count" != "X" ]; then 
+   diff ${PARSER-CONFIG-YAIM-FILE}.OLD.${count} ${PARSER-CONFIG-YAIM-FILE} > /dev/null 2>&1 
+fi
+if [ $? == 0 ]; then
+     rm -f ${PARSER-CONFIG-YAIM-FILE}.OLD.${count}
+else
+     yaimlog WARNING " ${PARSER-CONFIG-YAIM-FILE} exists. Your old file will be saved as ${PARSER-CONFIG-YAIM-FILE}.OLD.${count}"
+fi
 
-chown root:root ${INSTALL_ROOT}/glite/etc/glite-apel-sge/parse\r-config-yaim.xml
-chmod 600 ${INSTALL_ROOT}/glite/etc/glite-apel-sge/parse\r-config-yaim.xml
+count=""
+
+yaimlog INFO \
+yaimlog INFO " Set ownership and permissions to ${PARSER-CONFIG-YAIM-FILE}"
+
+chown root:root ${PARSER-CONFIG-YAIM-FILE}
+chmod 600  ${PARSER-CONFIG-YAIM-FILE}
 
 # Remove confusion with two different jobs being called edg-rgma-apel
 if [ -f ${CRON_DIR}/edg-rgma-apel ]; then
     rm -f ${CRON_DIR}/edg-rgma-apel
 fi
 
-cron_job edg-apel-sge-parser root "35 01 * * * env RGMA_HOME=${INSTALL_ROOT}/glite APEL_HOME=${INSTALL_ROOT}/glite ${INSTALL_ROOT}/glite/bin/apel-sge-log-parser -f ${INSTALL_ROOT}/glite/etc/glite-apel-sge/parser-config-yaim.xml >> /var/log/apel.log 2>&1"
+yaimlog INFO \
+yaimlog INFO " Define edg-apel-sge-parser cron job"
+
+cron_job edg-apel-sge-parser root "35 01 * * * env RGMA_HOME=${INSTALL_ROOT}/glite APEL_HOME=${INSTALL_ROOT}/glite ${INSTALL_ROOT}/glite/bin/apel-sge-log-parser -f ${PARSER-CONFIG-YAIM-FILE} >> /var/log/apel.log 2>&1"
 
 return 0
 

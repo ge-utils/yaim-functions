@@ -17,7 +17,7 @@
 #
 # NAME        : config_sge2ce
 #
-# DESCRIPTION : This function enables an lcg-CE 3.1 to work as a SGE submission host, 
+# DESCRIPTION : This function enables an lcg-CE to work as a SGE submission host, 
 #               being able to query/interact with the SGE QMASTER host (which may 
 #               be working in a different machine)
 #
@@ -51,6 +51,7 @@ yaimlog DEBUG "###"
 
 yaimlog INFO \
 yaimlog INFO " Building SGE directories under ${SGE_ROOT}/${SGE_CELL}"
+
 if [ ! -d ${SGE_ROOT} ]; then
    yaimlog ABORT "${SGE_ROOT} doesn't exist. Is SGE installed under ${SGE_ROOT}? Please Check!!! Exiting..."  
    exit 1
@@ -69,13 +70,23 @@ fi
 #---*---
 
 yaimlog DEBUG "###"
-yaimlog DEBUG "### Check bootstrap and act_qmaster file where SGE qmaster is defined"
+yaimlog DEBUG "### Check SGE bootstrap file"
 yaimlog DEBUG "###"
 
 BOOTSTRAP_FILE=${SGE_ROOT}/${SGE_CELL}/common/bootstrap
-if [ ! -e ${BOOTSTRAP_FILE} ]; then
-   yaimlog INFO " ${BOOTSTRAP_FILE} doesn't exist. Creating it..."
-   cat <<EOF_BOOTSTRAP_FILE > ${BOOTSTRAP_FILE}
+yaimlog INFO \
+yaimlog INFO " Configuring SGE {BOOTSTRAP_FILE} file" 
+if [ -e ${BOOTSTRAP_FILE} ]; then
+   count=`ls -tr ${BOOTSTRAP_FILE}.OLD* 2>/dev/null | tail -n 1 | cut -f4 -d"."`
+   if [ "X$count" == "X" ]; then
+       count=0
+   else
+       count=`expr $count + 1`
+   fi
+   mv -f ${BOOTSTRAP_FILE} ${BOOTSTRAP_FILE}.OLD.${count}
+fi
+
+cat <<EOF_BOOTSTRAP_FILE > ${BOOTSTRAP_FILE}
 admin_user        none
 default_domain    ${MY_DOMAIN}
 ignore_fqdn       true
@@ -86,9 +97,27 @@ binary_path       ${SGE_ROOT}/bin
 qmaster_spool_dir ${SGE_ROOT}/${SGE_CELL}/spool/qmaster
 security_mode     none
 EOF_BOOTSTRAP_FILE
+
+if [ "X$count" != "X" ]; then 
+   diff ${BOOTSTRAP_FILE}.OLD.${count} ${BOOTSTRAP_FILE} > /dev/null 2>&1 
+fi
+if [ $? == 0 ]; then
+     rm -f ${BOOTSTRAP_FILE}.OLD.${count}
+else
+     yaimlog WARNING " ${BOOTSTRAP_FILE} exists. Your old file will be saved as ${BOOTSTRAP_FILE}.OLD.${count}"
 fi
 
+count=""
+
+#---*---
+
+yaimlog DEBUG "###"
+yaimlog DEBUG "### Check act_qmaster file where SGE qmaster is defined"
+yaimlog DEBUG "###"
+
 ACT_QMASTER_FILE=${SGE_ROOT}/${SGE_CELL}/common/act_qmaster
+yaimlog INFO \
+yaimlog INFO " Configuring SGE {ACT_QMASTER_FILE} file"
 if [ -e ${ACT_QMASTER_FILE} ]; then
    OLD_BATCH_SERVER=`cat ${ACT_QMASTER_FILE}`
    yaimlog WARNING "${ACT_QMASTER_FILE} exists! New value \(${BATCH_SERVER}\) will overwrite old value \(${OLD_BATCH_SERVER}\)"
@@ -105,9 +134,9 @@ yaimlog DEBUG "###"
 yaimlog DEBUG "### Build the scripts which set the proper SGE environment"
 yaimlog DEBUG "###"
 
-yaimlog INFO " Create /etc/profile.d/sge.sh and /etc/profile.d/sge.csh"
-
 SGE_SHENV_FILE=/etc/profile.d/sge.sh
+yaimlog INFO \
+yaimlog INFO " Create $SGE_SHENV_FILE file"
 if [ -e ${SGE_SHENV_FILE} ]; then
    rm -f ${SGE_SHENV_FILE}
 fi
@@ -119,6 +148,8 @@ export SGE_CELL=${SGE_CELL}
 EOF_SGE_SHENV_FILE
 
 SGE_CSHENV_FILE=/etc/profile.d/sge.csh
+yaimlog INFO \
+yaimlog INFO " Create $SGE_CSHENV_FILE file"
 if [ -e ${SGE_CSHENV_FILE} ]; then
    rm -f ${SGE_CSHENV_FILE}
 fi
@@ -129,7 +160,10 @@ setenv SGE_CELL "${SGE_CELL}"
 source ${SGE_ROOT}/${SGE_CELL}/common/settings.csh
 EOF_SGE_CSHENV_FILE
 
+#---*---
+
 SGE_SHSETTING_FILE=${SGE_ROOT}/${SGE_CELL}/common/settings.sh
+yaimlog INFO \
 yaimlog INFO " Check if ${SGE_SHSETTING_FILE} exists. If not, create it!"
 if [ -e ${SGE_SHSETTING_FILE} ]; then
    count=`ls -tr ${SGE_SHSETTING_FILE}.OLD* 2>/dev/null | tail -n 1 | cut -f4 -d"."`
@@ -175,9 +209,13 @@ if [ $? == 0 ]; then
 else
      yaimlog WARNING " ${SGE_SHSETTING_FILE} exists. Your old file will be saved as ${SGE_SHSETTING_FILE}.OLD.${count}"
 fi
+
 count=""
 
+#---*---
+
 SGE_CSHSETTING_FILE=${SGE_ROOT}/${SGE_CELL}/common/settings.csh
+yaimlog INFO \
 yaimlog INFO " Check if ${SGE_CSHSETTING_FILE} exists. If not, create it!"
 if [ -e ${SGE_CSHSETTING_FILE} ]; then
    count=`ls -tr ${SGE_CSHSETTING_FILE}.OLD* 2>/dev/null | tail -n 1 | cut -f4 -d"."`
@@ -224,6 +262,7 @@ if [ $? == 0 ]; then
 else
      yaimlog WARNING " ${SGE_CSHSETTING_FILE} exists. Your old file will be saved as ${SGE_CSHSETTING_FILE}.OLD.${count}"
 fi
+
 count=""
 
 #---*---
