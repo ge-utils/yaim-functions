@@ -45,12 +45,7 @@ function config_sge2ce(){
 
 INSTALL_ROOT=${INSTALL_ROOT:-/opt}
 
-yaimlog DEBUG "###"
-yaimlog DEBUG "### Create SGE directories and paths"
-yaimlog DEBUG "###"
-
-yaimlog INFO \
-yaimlog INFO " Building SGE directories under ${SGE_ROOT}/${SGE_CELL}"
+yaimlog DEBUG "Building SGE directories under ${SGE_ROOT}/${SGE_CELL}"
 
 if [ ! -d ${SGE_ROOT} ]; then
    yaimlog ABORT "${SGE_ROOT} doesn't exist. Is SGE installed under ${SGE_ROOT}? Please Check!!! Exiting..."  
@@ -58,24 +53,19 @@ if [ ! -d ${SGE_ROOT} ]; then
 fi
 
 if [ ! -d ${SGE_ROOT}/${SGE_CELL} ]; then
-   yaimlog WARNING " ${SGE_ROOT}/${SGE_CELL} doesn't exist. Probably SGE is installed but not configured yet..."
-   yaimlog INFO " Making ${SGE_ROOT}/${SGE_CELL} ..."
+   yaimlog WARNING "${SGE_ROOT}/${SGE_CELL} doesn't exist. Probably SGE is installed but not configured yet..."
+   yaimlog INFO "Making ${SGE_ROOT}/${SGE_CELL} ..."
    mkdir ${SGE_ROOT}/${SGE_CELL}
-   yaimlog INFO " Making ${SGE_ROOT}/${SGE_CELL}/common ..."
+   yaimlog INFO "Making ${SGE_ROOT}/${SGE_CELL}/common ..."
    mkdir ${SGE_ROOT}/${SGE_CELL}/common
 else
-   yaimlog INFO " ${SGE_ROOT}/${SGE_CELL} directories are already created."
+   yaimlog WARNING "${SGE_ROOT}/${SGE_CELL} directories are already created."
 fi
 
 #---*---
 
-yaimlog DEBUG "###"
-yaimlog DEBUG "### Check SGE bootstrap file"
-yaimlog DEBUG "###"
-
 BOOTSTRAP_FILE=${SGE_ROOT}/${SGE_CELL}/common/bootstrap
-yaimlog INFO \
-yaimlog INFO " Configuring SGE {BOOTSTRAP_FILE} file" 
+yaimlog DEBUG "Configuring SGE ${BOOTSTRAP_FILE} file" 
 if [ -e ${BOOTSTRAP_FILE} ]; then
    count=`ls -tr ${BOOTSTRAP_FILE}.OLD* 2>/dev/null | tail -n 1 | cut -f4 -d"."`
    if [ "X$count" == "X" ]; then
@@ -104,25 +94,18 @@ fi
 if [ $? == 0 ]; then
      rm -f ${BOOTSTRAP_FILE}.OLD.${count}
 else
-     yaimlog WARNING " ${BOOTSTRAP_FILE} exists. Your old file will be saved as ${BOOTSTRAP_FILE}.OLD.${count}"
+     yaimlog WARNING "${BOOTSTRAP_FILE} exists. Your old file will be saved as ${BOOTSTRAP_FILE}.OLD.${count}"
 fi
 
 count=""
 
 #---*---
 
-yaimlog DEBUG "###"
-yaimlog DEBUG "### Check act_qmaster file where SGE qmaster is defined"
-yaimlog DEBUG "###"
-
 ACT_QMASTER_FILE=${SGE_ROOT}/${SGE_CELL}/common/act_qmaster
-yaimlog INFO \
-yaimlog INFO " Configuring SGE {ACT_QMASTER_FILE} file"
+yaimlog DEBUG "Configuring SGE ${ACT_QMASTER_FILE} file"
 if [ -e ${ACT_QMASTER_FILE} ]; then
    OLD_BATCH_SERVER=`cat ${ACT_QMASTER_FILE}`
-   yaimlog WARNING "${ACT_QMASTER_FILE} exists! New value \(${BATCH_SERVER}\) will overwrite old value \(${OLD_BATCH_SERVER}\)"
-else
-   yaimlog INFO " ${ACT_QMASTER_FILE} doesn't exist. Creating it..."
+   yaimlog WARNING "${ACT_QMASTER_FILE} exists! New value (${BATCH_SERVER}) will overwrite old value (${OLD_BATCH_SERVER})"
 fi
 cat <<EOF_ACT_QMASTER_FILE > ${ACT_QMASTER_FILE}
 ${BATCH_SERVER}
@@ -130,13 +113,10 @@ EOF_ACT_QMASTER_FILE
 
 #---*---
 
-yaimlog DEBUG "###"
-yaimlog DEBUG "### Build the scripts which set the proper SGE environment"
-yaimlog DEBUG "###"
+yaimlog INFO "Build the scripts which set the proper SGE environment"
 
 SGE_SHENV_FILE=/etc/profile.d/sge.sh
-yaimlog INFO \
-yaimlog INFO " Create $SGE_SHENV_FILE file"
+yaimlog DEBUG "Create $SGE_SHENV_FILE file"
 if [ -e ${SGE_SHENV_FILE} ]; then
    rm -f ${SGE_SHENV_FILE}
 fi
@@ -148,8 +128,7 @@ export SGE_CELL=${SGE_CELL}
 EOF_SGE_SHENV_FILE
 
 SGE_CSHENV_FILE=/etc/profile.d/sge.csh
-yaimlog INFO \
-yaimlog INFO " Create $SGE_CSHENV_FILE file"
+yaimlog DEBUG "Create $SGE_CSHENV_FILE file"
 if [ -e ${SGE_CSHENV_FILE} ]; then
    rm -f ${SGE_CSHENV_FILE}
 fi
@@ -163,8 +142,7 @@ EOF_SGE_CSHENV_FILE
 #---*---
 
 SGE_SHSETTING_FILE=${SGE_ROOT}/${SGE_CELL}/common/settings.sh
-yaimlog INFO \
-yaimlog INFO " Check if ${SGE_SHSETTING_FILE} exists. If not, create it!"
+yaimlog DEBUG "Check if ${SGE_SHSETTING_FILE} exists. If not, create it!"
 if [ -e ${SGE_SHSETTING_FILE} ]; then
    count=`ls -tr ${SGE_SHSETTING_FILE}.OLD* 2>/dev/null | tail -n 1 | cut -f4 -d"."`
    if [ "X$count" == "X" ]; then
@@ -207,7 +185,7 @@ fi
 if [ $? == 0 ]; then
      rm -f ${SGE_SHSETTING_FILE}.OLD.${count}
 else
-     yaimlog WARNING " ${SGE_SHSETTING_FILE} exists. Your old file will be saved as ${SGE_SHSETTING_FILE}.OLD.${count}"
+     yaimlog WARNING "${SGE_SHSETTING_FILE} exists. Your old file will be saved as ${SGE_SHSETTING_FILE}.OLD.${count}"
 fi
 
 count=""
@@ -215,8 +193,7 @@ count=""
 #---*---
 
 SGE_CSHSETTING_FILE=${SGE_ROOT}/${SGE_CELL}/common/settings.csh
-yaimlog INFO \
-yaimlog INFO " Check if ${SGE_CSHSETTING_FILE} exists. If not, create it!"
+yaimlog DEBUG "Check if ${SGE_CSHSETTING_FILE} exists. If not, create it!"
 if [ -e ${SGE_CSHSETTING_FILE} ]; then
    count=`ls -tr ${SGE_CSHSETTING_FILE}.OLD* 2>/dev/null | tail -n 1 | cut -f4 -d"."`
    if [ "X$count" == "X" ]; then
@@ -260,16 +237,14 @@ fi
 if [ $? == 0 ]; then
      rm -f ${SGE_CSHSETTING_FILE}.OLD.${count}
 else
-     yaimlog WARNING " ${SGE_CSHSETTING_FILE} exists. Your old file will be saved as ${SGE_CSHSETTING_FILE}.OLD.${count}"
+     yaimlog WARNING "${SGE_CSHSETTING_FILE} exists. Your old file will be saved as ${SGE_CSHSETTING_FILE}.OLD.${count}"
 fi
 
 count=""
 
 #---*---
 
-yaimlog DEBUG "###"
-yaimlog DEBUG "### Link binaries to lx26-x86 (original compilation)"
-yaimlog DEBUG "###"
+yaimlog DEBUG "Link binaries to lx26-x86 (original compilation)"
 
 ARCH=`$SGE_ROOT/util/arch`
 ARCH_DEFAULT=lx26-x86
@@ -282,9 +257,7 @@ fi
 
 #---*---
 
-yaimlog DEBUG "###"
-yaimlog DEBUG "### Define default sge_qstat options"
-yaimlog DEBUG "###"
+yaimlog DEBUG "Define default sge_qstat options"
 
 SGE_QSTAT_OPTIONS_FILE=${SGE_ROOT}/${SGE_CELL}/common/sge_qstat
 if [ -e ${SGE_QSTAT_OPTIONS_FILE} ]; then
@@ -296,33 +269,46 @@ EOF_SGE_QSTAT_OPTIONS_FILE
 
 #---*---
 
-yaimlog DEBUG "###"
-yaimlog DEBUG "### Modify /etc/services file and add the appropriate ports for SGE daemons"
-yaimlog DEBUG "###"
-
-SERVICES_FILE=/etc/services
-yaimlog INFO \
-yaimlog INFO " Configuring sgemaster daemon in ${SERVICES_FILE}"
-PORT1="X"`grep "${SGE_QMASTER}/tcp" ${SERVICES_FILE} | grep -v sge`
-if [ "${PORT1}" != "X" ]; then
-     yaimlog ABORT " Port ${SGE_QMASTER}/tcp is already used by other service. Check ${SERVICES_FILE}"
+SERVICES_FILE="/etc/services"
+yaimlog DEBUG "Modify ${SERVICES_FILE} file and add the appropriate ports for SGE daemons"
+PORT1=`grep "${SGE_QMASTER}/tcp" ${SERVICES_FILE} | grep -v sge`
+if [ "X${PORT1}" != "X" ]; then
+     yaimlog ABORT "Port ${SGE_QMASTER}/tcp is already used by other service. Check ${SERVICES_FILE}"
      exit 1
 fi
-VAR1="X"`grep ^sge_qmaster ${SERVICES_FILE}`
-if [ "${VAR1}" == "X" ]; then
-     yaimlog INFO " Adding sge_qmaster in $SERVICES_FILE"
+VAR1=`grep ^sge_qmaster ${SERVICES_FILE} | awk '{print $2}'`
+if [ "X${VAR1}" == "X" ]; then
+     yaimlog INFO "Adding sge_qmaster in $SERVICES_FILE"
      echo "sge_qmaster     ${SGE_QMASTER}/tcp           # tcp port for SGE Qmaster daemon" >> ${SERVICES_FILE}
-fi
-PORT2="X"`grep "${SGE_EXECD}/tcp" ${SERVICES_FILE} | grep -v sge`
-if [ "${PORT2}" != "X" ]; then
-     yaimlog ABORT " Port ${SGE_EXECD}/tcp is already used by other service. Check ${SERVICES_FILE}"
-     exit 1
-fi
-VAR2="X"`grep ^sge_execd ${SERVICES_FILE}`
-if [ "${VAR2}" == "X" ]; then
-     yaimlog INFO " Adding sge_execd in ${SERVICES_FILE}"
-     echo "sge_execd       ${SGE_EXECD}/tcp           # tcp port for SGE execd service" >> ${SERVICES_FILE}
+else
+     if [ "X${VAR1}" != "X${SGE_QMASTER}/tcp" ]; then
+        yaimlog WARNING "sge_qmaster already defined in $SERVICES_FILE on port $VAR1 and different from ${SGE_QMASTER}/tcp"
+        yaimlog WARNING "Overwrite sge_qmaster port in $SERVICES_FILE using ${SGE_QMASTER}/tcp port"
+        VAR1=`echo $VAR1 | cut -f1 -d"/"`
+        sed "s/${VAR1}\/tcp/${SGE_QMASTER}\/tcp/g" $SERVICES_FILE > $SERVICES_FILE.tmp
+        mv -f $SERVICES_FILE.tmp $SERVICES_FILE
+     fi
 fi
 
+PORT2=`grep "${SGE_EXECD}/tcp" ${SERVICES_FILE} | grep -v sge`
+if [ "X${PORT2}" != "X" ]; then
+     yaimlog ABORT "Port ${SGE_EXECD}/tcp is already used by other service. Check ${SERVICES_FILE}"
+     exit 1
+fi
+VAR2=`grep ^sge_execd ${SERVICES_FILE} | awk '{print $2}'`
+if [ "X${VAR2}" == "X" ]; then
+     yaimlog INFO "Adding sge_execd in ${SERVICES_FILE}"
+     echo "sge_execd       ${SGE_EXECD}/tcp           # tcp port for SGE execd service" >> ${SERVICES_FILE}
+else
+     if [ "X${VAR2}" != "X${SGE_EXECD}/tcp" ]; then
+        yaimlog WARNING "sge_execd already defined in $SERVICES_FILE on port $VAR2 and different from ${SGE_EXECD}/tcp"
+        yaimlog WARNING "Overwrite sge_execd port in $SERVICES_FILE using ${SGE_EXECD}/tcp port"
+        VAR2=`echo $VAR2 | cut -f1 -d"/"`
+        sed "s/${VAR2}\/tcp/${SGE_EXECD}\/tcp/g" $SERVICES_FILE > $SERVICES_FILE.tmp
+        mv -f $SERVICES_FILE.tmp $SERVICES_FILE
+     fi
+fi
+
+return 0
 }
 

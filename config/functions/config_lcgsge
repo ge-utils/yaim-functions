@@ -44,23 +44,19 @@ function config_lcgsge(){
 
 INSTALL_ROOT=${INSTALL_ROOT:-/opt}
 
-yaimlog DEBUG "###"
-yaimlog DEBUG "### Get gLite version "
-yaimlog DEBUG "###"
+yaimlog DEBUG "Get gLite version "
 
-glite_version=`echo /opt/glite/bin/glite-version | cut -d '.' -f1-2`
-if [ "X$glite_version" == "X3.1" ]; then
-   yaimlog INFO "Running JobManager SGE configuration for gLite version >= 3.1"
-elif [ "X$glite_version" == "X" -or "X$glite_version" != "3.1" ]; then 
-   yaimlog ABORT "gLite version not supported. Exiting..."  
+glite_version=`/opt/glite/bin/glite-version | cut -d '.' -f1-2`
+if [ "X$glite_version" == "X" -o "X$glite_version" != "X3.1" ]; then
+   yaimlog ABORT "gLite version not supported. Exiting..."
    exit 1
+else
+   yaimlog DEBUG "Running JobManager SGE configuration for gLite version >= 3.1"
 fi
 
 #---*---
 
-yaimlog DEBUG "###"
-yaimlog DEBUG "### Build JobManager configuration files based on CESGA implementation"
-yaimlog DEBUG "###"
+yaimlog INFO "Build JobManager configuration files based on CESGA implementation"
 
 SGE_JOBMANAGER=$INSTALL_ROOT/globus/lib/perl/Globus/GRAM/JobManager/lcgsge.pm
 if [ ! -e ${SGE_JOBMANAGER} ]; then
@@ -69,8 +65,7 @@ if [ ! -e ${SGE_JOBMANAGER} ]; then
 fi
 
 SGE_JOBMANAGER_CONF=$INSTALL_ROOT/globus/lib/perl/Globus/GRAM/JobManager/lcgsge.conf
-yaimlog INFO \
-yaimlog INFO " Configuring SGE JM conf file: $SGE_JOBMANAGER_CONF"
+yaimlog DEBUG "Configuring SGE JM conf file: $SGE_JOBMANAGER_CONF"
 if [ -e ${SGE_JOBMANAGER_CONF} ]; then
    count=`ls -tr ${SGE_JOBMANAGER_CONF}.OLD* 2>/dev/null | tail -n 1 | cut -f4 -d"."`
    if [ "X$count" == "X" ]; then
@@ -120,5 +115,6 @@ fi
 
 count=""
 
+return 0
 }
 

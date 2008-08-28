@@ -43,26 +43,17 @@ function config_gip_sge_30(){
 
 INSTALL_ROOT=${INSTALL_ROOT:-/opt}
 
-yaimlog DEBUG "###"
-yaimlog DEBUG "### Get gLite version "
-yaimlog DEBUG "###"
+yaimlog DEBUG "Get gLite version "
 
-glite_version=`echo /opt/glite/bin/glite-version | cut -d '.' -f1-2`
-if [ "X$glite_version" == "X3.0" ]; then
-   yaimlog INFO "Running InfoProvider SGE configuration for gLite version >= 3.0"
-elif [ "X$glite_version" == "X" -or "X$glite_version" != "3.0" ]; then 
-   yaimlog ABORT "gLite version not supported. Exiting..."  
+glite_version=`/opt/glite/bin/glite-version | cut -d '.' -f1-2`
+if [ "X$glite_version" == "X" -o "X$glite_version" != "X3.1" ]; then
+   yaimlog ABORT "gLite version not supported. Exiting..."
    exit 1
+else
+   yaimlog DEBUG "Running SGE Information Provider configuration for gLite version >= 3.1"
 fi
 
-
-yaimlog DEBUG "###"
-yaimlog DEBUG "### Build InfoProvider based on LeSC implementation"
-yaimlog DEBUG "###"
-
-
-yaimlog INFO \
-yaimlog INFO " Installing InfoProvider configuration files "
+yaimlog INFO "Build InfoProvider based on LeSC implementation"
 
 SGE_INFOPROVIDER_DIR=/etc/sge-jobmanager
 SGE_INFOPROVIDER_VQUEUES=${SGE_INFOPROVIDER_DIR}/vqueues.conf
@@ -74,11 +65,11 @@ if [ ! -e ${SGE_INFOPROVIDER} ]; then
    yaimlog ABORT " SGE InfoProvider is not installed !!! Without it the information system will not work ! Exiting ... "
    exit 1
 else
-   yaimlog INFO " Check SGE dynamic information plugin file permissions"
+   yaimlog DEBUG "Check $SGE_INFOPROVIDER file permissions"
    if [ -x ${SGE_INFOPROVIDER} ]; then
-      yaimlog INFO " ${SGE_INFOPROVIDER} has correct permissions"
+      yaimlog DEBUG "${SGE_INFOPROVIDER} has correct permissions"
    else
-      yaimlog INFO " ${SGE_INFOPROVIDER} does not has the correct permissions. Changing them ..."
+      yaimlog WARNING "${SGE_INFOPROVIDER} does not has the correct permissions. Changing them ..."
       chmod +x $SGE_INFOPROVIDER
    fi
 fi
@@ -89,13 +80,7 @@ fi
 
 #---*---
 
-yaimlog DEBUG "###"
-yaimlog DEBUG "### Virtual queue configuration file"
-yaimlog DEBUG "###"
-
-yaimlog INFO \
-yaimlog INFO " Creating ${SGE_INFOPROVIDER_VQUEUES} file..."
-
+yaimlog DEBUG "Creating ${SGE_INFOPROVIDER_VQUEUES} file..."
 if [ -e ${SGE_INFOPROVIDER_VQUEUES} ]; then
    count=`ls -tr ${SGE_INFOPROVIDER_VQUEUES}.OLD* 2>/dev/null | tail -n 1 | cut -f4 -d"."`
    if [ "X$count" == "X" ]; then
@@ -138,8 +123,14 @@ cat <<EOF_SGE_INFOPROVIDER_VQUEUES >> ${SGE_INFOPROVIDER_VQUEUES}
 # --------------------------------------------------
 EOF_SGE_INFOPROVIDER_VQUEUES
 
-if [ "X$count" != "X" ]; then 
-   diff ${SGE_INFOPROVIDER_VQUEUES}.OLD.${count} ${SGE_INFOPROVIDER_VQUEUES} > /dev/null 2>&1 
+for QUEUE in `echo $QUEUES | sed 's/"//g'` ; do
+   cat <<EOF_SGE_INFOPROVIDER_VQUEUES >> $SGE_INFOPROVIDER_VQUEUES
+$QUEUE          queue                   $QUEUE
+EOF_SGE_INFOPROVIDER_VQUEUES
+done
+
+if [ "X$count" != "X" ]; then
+   diff ${SGE_INFOPROVIDER_VQUEUES}.OLD.${count} ${SGE_INFOPROVIDER_VQUEUES} > /dev/null 2>&1
 fi
 if [ $? == 0 ]; then
      rm -f ${SGE_INFOPROVIDER_VQUEUES}.OLD.${count}
@@ -149,21 +140,10 @@ fi
 
 count=""
 
-for QUEUE in `echo $QUEUES | sed 's/"//g'` ; do
-   cat <<EOF_SGE_INFOPROVIDER_VQUEUES >> $SGE_INFOPROVIDER_VQUEUES
-$QUEUE          queue                   $QUEUE
-EOF_SGE_INFOPROVIDER_VQUEUES
-done
 
 #---*---
 
-yaimlog DEBUG "###"
-yaimlog DEBUG "### Reporter configuration file"
-yaimlog DEBUG "###"
-
-yaimlog INFO \
-yaimlog INFO " Creating $SGE_INFOPROVIDER_REPORTER file..."
-
+yaimlog DEBUG "Creating $SGE_INFOPROVIDER_REPORTER file..."
 if [ -e ${SGE_INFOPROVIDER_REPORTER} ]; then
    count=`ls -tr ${SGE_INFOPROVIDER_REPORTER}.OLD* 2>/dev/null | tail -n 1 | cut -f4 -d"."`
    if [ "X$count" == "X" ]; then
@@ -171,7 +151,6 @@ if [ -e ${SGE_INFOPROVIDER_REPORTER} ]; then
    else
        count=`expr $count + 1`
    fi
-   yaimlog WARNING " ${SGE_INFOPROVIDER_REPORTER} exists. Your old file will be saved as ${SGE_INFOPROVIDER_REPORTER}.OLD.${count}"
    mv -f ${SGE_INFOPROVIDER_REPORTER} ${SGE_INFOPROVIDER_REPORTER}.OLD.${count}
 fi
 
@@ -301,12 +280,7 @@ count=""
 
 #---*---
 
-yaimlog DEBUG "###"
-yaimlog DEBUG "### Cluster Status "
-yaimlog DEBUG "###"
-
-yaimlog INFO \
-yaimlog INFO " Set Cluster status to Production in $SGE_INFOPROVIDER_CLUSTER"
+yaimlog DEBUG "Set Cluster status to Production in $SGE_INFOPROVIDER_CLUSTER"
 
 rm -f $SGE_INFOPROVIDER_CLUSTER
 cat <<EOF_SGE_INFOPROVIDER_CLUSTER >> ${SGE_INFOPROVIDER_CLUSTER}
@@ -315,15 +289,8 @@ EOF_SGE_INFOPROVIDER_CLUSTER
 
 #---*---
 
-yaimlog DEBUG "###"
-yaimlog DEBUG "### CE Plugin File"
-yaimlog DEBUG "###"
-
 CE_PLUGIN_FILE=${INSTALL_ROOT}/glite/etc/gip/plugin/glite-info-dynamic-ce
-
-yaimlog INFO \
-yaimlog INFO " Configure SGE dynamic information plugin: ${CE_PLUGIN_FILE}"
-
+yaimlog DEBUG "Configure SGE dynamic information plugin: ${CE_PLUGIN_FILE}"
 if [ -e ${CE_PLUGIN_FILE} ]; then
    rm -f ${CE_PLUGIN_FILE}
 fi 
@@ -333,19 +300,15 @@ cat <<EOF_CE_PLUGIN_FILE > ${CE_PLUGIN_FILE}
 $plugin
 EOF_CE_PLUGIN_FILE
 
-yaimlog INFO \
-yaimlog INFO " Set proper permissions to ${CE_PLUGIN_FILE}"
+yaimlog DEBUG "Set proper permissions to ${CE_PLUGIN_FILE}"
 chmod +x ${CE_PLUGIN_FILE}
 
 #---*---
 
-yaimlog DEBUG "###"
-yaimlog DEBUG "### Include dynamic script in /opt/lcg/etc/lcg-info-generic.conf"
-yaimlog DEBUG "###"
+yaimlog DEBUG "Include dynamic script in /opt/lcg/etc/lcg-info-generic.conf"
 
 GLITE_INFO_GENERIC_CONF=/opt/glite/etc/gip/glite-info-generic.conf
-yaimlog INFO \
-yaimlog INFO " Configuring ${SGE_INFOPROVIDER} in ${GLITE_INFO_GENERIC_CONF} as dynamic script"
+yaimlog DEBUG "Configuring ${SGE_INFOPROVIDER} in ${GLITE_INFO_GENERIC_CONF} as dynamic script"
 
 if [ ! -e ${GLITE_INFO_GENERIC_CONF} ]; then
    yaimlog ABORT " $GLITE_INFO_GENERIC_CONF does not exist"
@@ -358,8 +321,8 @@ if [ "X$dynamic_script_exists" == "X"  ]; then
    cat /opt/glite/etc/gip/glite-info-generic.conf >> /opt/glite/etc/gip/glite-info-generic.conf.tmp
    mv -f /opt/glite/etc/gip/glite-info-generic.conf.tmp /opt/glite/etc/gip/glite-info-generic.conf
 else
-   yaimlog WARNING " A dynamic script is already configured in ${GLITE_INFO_GENERIC_CONF}"
-   yaimlog WARNING " Rewritting current implementation \"$dynamic_script_exists\" "
+   yaimlog WARNING "A dynamic script is already configured in ${GLITE_INFO_GENERIC_CONF}"
+   yaimlog WARNING "Rewritting current implementation \"$dynamic_script_exists\" "
    echo "dynamic_script = /opt/lcg/libexec/lcg-info-dynamic-sge" > /opt/glite/etc/gip/glite-info-generic.conf.tmp
    cat /opt/glite/etc/gip/glite-info-generic.conf | grep -v dynamic_script >> /opt/glite/etc/gip/glite-info-generic.conf.tmp 
    mv -f /opt/glite/etc/gip/glite-info-generic.conf.tmp /opt/glite/etc/gip/glite-info-generic.conf
@@ -367,13 +330,8 @@ fi
 
 #---*---
 
-yaimlog DEBUG "###"
-yaimlog DEBUG "### Comment the content of glite-info-dynamic-scheduler-wrapper"
-yaimlog DEBUG "###"
-
 CE_SCHEDULER_WRAPPER_FILE=${INSTALL_ROOT}/glite/etc/gip/plugin/glite-info-dynamic-scheduler-wrapper
-yaimlog INFO \
-yaimlog INFO " Comment the content of $CE_SCHEDULER_WRAPPER_FILE. Not used in SGE"
+yaimlog WARNING "Comment the content of $CE_SCHEDULER_WRAPPER_FILE. Not used in SGE"
 if [ -e ${CE_SCHEDULER_WRAPPER_FILE} ]; then
    rm -f ${CE_SCHEDULER_WRAPPER_FILE}
 fi
@@ -384,13 +342,12 @@ EOF_CE_SCHEDULER_WRAPPER_FILE
 
 #---*---
 
-yaimlog DEBUG "###"
-yaimlog DEBUG "### Restart information system after reconfiguring SGE"
-yaimlog DEBUG "###"
-
+yaimlog DEBUG "Restart information system after reconfiguring SGE"
 
 /etc/init.d/globus-mds stop
 /etc/init.d/globus-mds start
+
+return 0
 
 }
 
