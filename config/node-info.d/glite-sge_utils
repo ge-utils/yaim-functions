@@ -2,4 +2,5 @@ SGE_utils_FUNCTIONS="
 config_apel_sge
 config_sge2ce
 config_lcgsge
-config_gip_sge"
+config_gip_sge
+config_ssh_sge"
