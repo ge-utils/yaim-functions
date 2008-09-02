@@ -60,9 +60,18 @@ yaimlog INFO "Build JobManager configuration files based on CESGA implementation
 
 SGE_JOBMANAGER=$INSTALL_ROOT/globus/lib/perl/Globus/GRAM/JobManager/lcgsge.pm
 if [ ! -e ${SGE_JOBMANAGER} ]; then
-   yaimlog ABORT " ${SGE_JOBMANAGER} is not installed !!! Without it job management will not work!!! Exiting..."
+   yaimlog ABORT "${SGE_JOBMANAGER} is not installed !!! Without it job management will not work!!! Exiting..."
    exit 1
 fi
+
+if [ -e ${SGE_JOBMANAGER}.rpmnew ]; then
+   yaimlog WARNING "New ${SGE_JOBMANAGER} is deployed as .rpmnew in order to not overright your JM changes. Old ${SGE_JOBMANAGER} is still in place."
+fi
+
+if [ -e ${SGE_JOBMANAGER}.rpmsave ]; then
+   yaimlog WARNING "Previous ${SGE_JOBMANAGER} is saved as .rpmsave. New ${SGE_JOBMANAGER} is in place."
+fi
+
 
 SGE_JOBMANAGER_CONF=$INSTALL_ROOT/globus/lib/perl/Globus/GRAM/JobManager/lcgsge.conf
 yaimlog DEBUG " Installing SGE JM conf file: $SGE_JOBMANAGER_CONF" 

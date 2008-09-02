@@ -64,21 +64,29 @@ SGE_INFOPROVIDER=$INSTALL_ROOT/lcg/libexec/lcg-info-dynamic-sge
 if [ ! -e ${SGE_INFOPROVIDER} ]; then
    yaimlog ABORT " SGE InfoProvider is not installed !!! Without it the information system will not work ! Exiting ... "
    exit 1
-else
-   yaimlog DEBUG "Check $SGE_INFOPROVIDER file permissions"
-   if [ -x ${SGE_INFOPROVIDER} ]; then
-      yaimlog DEBUG "${SGE_INFOPROVIDER} has correct permissions"
-   else
-      yaimlog WARNING "${SGE_INFOPROVIDER} does not has the correct permissions. Changing them ..."
-      chmod +x $SGE_INFOPROVIDER
-   fi
 fi
+
+if [ -e ${SGE_INFOPROVIDER}.rpmnew ]; then
+   yaimlog WARNING "New ${SGE_INFOPROVIDER} is deployed as .rpmnew in order to not overright your IP changes. Old ${SGE_INFOPROVIDER} is still in place."
+fi
+
+if [ -e ${SGE_INFOPROVIDER}.rpmsave ]; then
+   yaimlog WARNING "Previous ${SGE_INFOPROVIDER} is saved as .rpmsave. New ${SGE_INFOPROVIDER} is in place."
+fi
+
+yaimlog DEBUG "Check $SGE_INFOPROVIDER file permissions"
+if [ -x ${SGE_INFOPROVIDER} ]; then
+     yaimlog DEBUG "${SGE_INFOPROVIDER} has correct permissions"
+else
+     yaimlog WARNING "${SGE_INFOPROVIDER} does not has the correct permissions. Changing them ..."
+     chmod 755 $SGE_INFOPROVIDER
+fi
+
+#---*---
 
 if [ ! -d ${SGE_INFOPROVIDER_DIR} ]; then
    mkdir ${SGE_INFOPROVIDER_DIR}
 fi 
-
-#---*---
 
 yaimlog DEBUG "Creating ${SGE_INFOPROVIDER_VQUEUES} file..."
 if [ -e ${SGE_INFOPROVIDER_VQUEUES} ]; then
@@ -301,7 +309,7 @@ $plugin
 EOF_CE_PLUGIN_FILE
 
 yaimlog DEBUG "Set proper permissions to ${CE_PLUGIN_FILE}"
-chmod +x ${CE_PLUGIN_FILE}
+chmod 755 ${CE_PLUGIN_FILE}
 
 #---*---
 
@@ -339,6 +347,14 @@ cat <<EOF_CE_SCHEDULER_WRAPPER_FILE > ${CE_SCHEDULER_WRAPPER_FILE}
 #!/bin/sh
 # /opt/lcg/libexec/lcg-info-dynamic-scheduler -c /opt/glite/etc/lcg-info-dynamic-scheduler.conf
 EOF_CE_SCHEDULER_WRAPPER_FILE
+
+yaimlog DEBUG "Check ${CE_SCHEDULER_WRAPPER_FILE} file permissions"
+if [ -x ${CE_SCHEDULER_WRAPPER_FILE} ]; then
+     yaimlog DEBUG "${CE_SCHEDULER_WRAPPER_FILE} has correct permissions"
+else
+     yaimlog WARNING "${CE_SCHEDULER_WRAPPER_FILE} does not has the correct permissions. Changing them ..."
+     chmod 755 ${CE_SCHEDULER_WRAPPER_FILE}
+fi
 
 #---*---
 
