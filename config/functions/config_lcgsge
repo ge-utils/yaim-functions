@@ -44,6 +44,11 @@ function config_lcgsge(){
 
 INSTALL_ROOT=${INSTALL_ROOT:-/opt}
 
+if [ ! -d /tmp/sge/globus/lib/perl/Globus/GRAM/JobManager ]; then
+     mkdir -p /tmp/sge/globus/lib/perl/Globus/GRAM/JobManager
+     chmod 700 /tmp/sge/globus/lib/perl/Globus/GRAM/JobManager
+fi
+
 yaimlog DEBUG "Get gLite version "
 
 glite_version=`/opt/glite/bin/glite-version | cut -d '.' -f1-2`
@@ -54,7 +59,12 @@ else
    yaimlog DEBUG "Running JobManager SGE configuration for gLite version >= 3.1"
 fi
 
+
 #---*---
+
+###
+### Build JobManager configuration files based on CESGA implementation
+###
 
 yaimlog INFO "Build JobManager configuration files based on CESGA implementation"
 
@@ -65,7 +75,7 @@ if [ ! -e ${SGE_JOBMANAGER} ]; then
 fi
 
 if [ -e ${SGE_JOBMANAGER}.rpmnew ]; then
-   yaimlog WARNING "New ${SGE_JOBMANAGER} is deployed as .rpmnew in order to not overright your JM changes. Old ${SGE_JOBMANAGER} is still in place."
+   yaimlog WARNING "New ${SGE_JOBMANAGER} is deployed as .rpmnew in order not to overwrite local JM changes. Old ${SGE_JOBMANAGER} is still in place."
 fi
 
 if [ -e ${SGE_JOBMANAGER}.rpmsave ]; then
@@ -75,13 +85,9 @@ fi
 SGE_JOBMANAGER_CONF=$INSTALL_ROOT/globus/lib/perl/Globus/GRAM/JobManager/lcgsge.conf
 yaimlog DEBUG "Configuring SGE JM conf file: $SGE_JOBMANAGER_CONF"
 if [ -e ${SGE_JOBMANAGER_CONF} ]; then
-   count=`ls -tr ${SGE_JOBMANAGER_CONF}.OLD* 2>/dev/null | tail -n 1 | cut -f4 -d"."`
-   if [ "X$count" == "X" ]; then
-       count=0
-   else
-       count=`expr $count + 1`
-   fi
-   mv -f ${SGE_JOBMANAGER_CONF} ${SGE_JOBMANAGER_CONF}.OLD.${count}
+   yaimlog WARNING "${SGE_JOBMANAGER_CONF} exists. It will not be changed!"
+   SGE_CONFIGURATION_FILE="/tmp/sge/globus/lib/perl/Globus/GRAM/JobManager/lcgsge.conf"
+   yaimlog WARNING "A recommended configuration will be created under ${SGE_CONFIGURATION_FILE}. You can copy it to ${INSTALL_ROOT}/globus/lib/perl/Globus/GRAM/JobManager/lcgsge.conf"
 fi
 
 cat <<EOF_SGE_JOBMANAGER_CONF > ${SGE_JOBMANAGER_CONF}
@@ -111,17 +117,6 @@ cat <<EOF_SGE_JOBMANAGER_CONF > ${SGE_JOBMANAGER_CONF}
 #\$EXTRA          = 'h_fsize=5G,s_cpu=0:10:0';
 \$EXTRA          = '';
 EOF_SGE_JOBMANAGER_CONF
-
-if [ "X$count" != "X" ]; then 
-   diff ${SGE_JOBMANAGER_CONF}.OLD.${count} ${SGE_JOBMANAGER_CONF} > /dev/null 2>&1 
-fi
-if [ $? == 0 ]; then
-     rm -f ${SGE_JOBMANAGER_CONF}.OLD.${count}
-else
-     yaimlog WARNING " ${SGE_JOBMANAGER_CONF} exists. Your old file will be saved as ${SGE_JOBMANAGER_CONF}.OLD.${count}"
-fi
-
-count=""
 
 return 0
 }

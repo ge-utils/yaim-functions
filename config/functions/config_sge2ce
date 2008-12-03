@@ -31,7 +31,7 @@
 
 
 function config_sge2ce_check(){
-    requires $1 SGE_ROOT SGE_CELL SGE_QMASTER SGE_EXECD BATCH_SERVER MY_DOMAIN
+    requires $1 SGE_ROOT SGE_CELL SGE_QMASTER SGE_EXECD SGE_SPOOL_METH BATCH_SERVER MY_DOMAIN
     return $?
 }
 
@@ -54,52 +54,60 @@ fi
 
 if [ ! -d ${SGE_ROOT}/${SGE_CELL} ]; then
    yaimlog WARNING "${SGE_ROOT}/${SGE_CELL} doesn't exist. Probably SGE is installed but not configured yet..."
-   yaimlog INFO "Making ${SGE_ROOT}/${SGE_CELL} ..."
-   mkdir ${SGE_ROOT}/${SGE_CELL}
    yaimlog INFO "Making ${SGE_ROOT}/${SGE_CELL}/common ..."
-   mkdir ${SGE_ROOT}/${SGE_CELL}/common
+   mkdir -p ${SGE_ROOT}/${SGE_CELL}/common
 else
-   yaimlog WARNING "${SGE_ROOT}/${SGE_CELL} directories are already created."
+   if [ ! -d ${SGE_ROOT}/${SGE_CELL}/common ]; then
+        yaimlog INFO "Making ${SGE_ROOT}/${SGE_CELL}/common ..."
+        mkdir ${SGE_ROOT}/${SGE_CELL}/common
+   fi
 fi
+
 
 #---*---
 
+
+###
+### Create bootstrap file
+###
+
+if [ "X$SGE_SPOOL_METH" == "Xclassic" ]; then
+     SGE_SPOOL_LIB=libspoolc
+     SGE_SPOOL_PAR="${SGE_ROOT}/${SGE_CELL}/spool/qmaster/spooldb"
+elif [ "X$SGE_SPOOL_METH" == "Xberkeleydb" ]; then
+     SGE_SPOOL_LIB=libspoolb
+     SGE_SPOOL_PAR="${SGE_ROOT}/${SGE_CELL}/common;${SGE_ROOT}/${SGE_CELL}/spool/qmaster"
+else
+     yaimlog ABORT "Unknowned/Unspecified SGE spooling method. Check your SGE_SPOOL_METH definition."
+     exit 1
+fi
+
 BOOTSTRAP_FILE=${SGE_ROOT}/${SGE_CELL}/common/bootstrap
-yaimlog DEBUG "Configuring SGE ${BOOTSTRAP_FILE} file" 
+yaimlog DEBUG "Configuring SGE ${BOOTSTRAP_FILE} file"
 if [ -e ${BOOTSTRAP_FILE} ]; then
-   count=`ls -tr ${BOOTSTRAP_FILE}.OLD* 2>/dev/null | tail -n 1 | cut -f4 -d"."`
-   if [ "X$count" == "X" ]; then
-       count=0
-   else
-       count=`expr $count + 1`
-   fi
-   mv -f ${BOOTSTRAP_FILE} ${BOOTSTRAP_FILE}.OLD.${count}
+     yaimlog WARNING "${BOOTSTRAP_FILE_FILE} exists! It will be overwritten with your current definitions"
 fi
 
 cat <<EOF_BOOTSTRAP_FILE > ${BOOTSTRAP_FILE}
 admin_user        none
 default_domain    ${MY_DOMAIN}
 ignore_fqdn       true
-spooling_method   classic
-spooling_lib      libspoolc
-spooling_params   ${SGE_ROOT}/${SGE_CELL}/common;${SGE_ROOT}/${SGE_CELL}/spool/qmaster
+spooling_method   ${SGE_SPOOL_METH}
+spooling_lib      ${SGE_SPOOL_LIB}
+spooling_params   ${SGE_SPOOL_PAR}
 binary_path       ${SGE_ROOT}/bin
 qmaster_spool_dir ${SGE_ROOT}/${SGE_CELL}/spool/qmaster
 security_mode     none
 EOF_BOOTSTRAP_FILE
-
-if [ "X$count" != "X" ]; then 
-   diff ${BOOTSTRAP_FILE}.OLD.${count} ${BOOTSTRAP_FILE} > /dev/null 2>&1 
-fi
-if [ $? == 0 ]; then
-     rm -f ${BOOTSTRAP_FILE}.OLD.${count}
-else
-     yaimlog WARNING "${BOOTSTRAP_FILE} exists. Your old file will be saved as ${BOOTSTRAP_FILE}.OLD.${count}"
 fi
 
-count=""
 
 #---*---
+
+
+###
+### Create act_qmaster file
+###
 
 ACT_QMASTER_FILE=${SGE_ROOT}/${SGE_CELL}/common/act_qmaster
 yaimlog DEBUG "Configuring SGE ${ACT_QMASTER_FILE} file"
@@ -111,14 +119,20 @@ cat <<EOF_ACT_QMASTER_FILE > ${ACT_QMASTER_FILE}
 ${BATCH_SERVER}
 EOF_ACT_QMASTER_FILE
 
+
 #---*---
+
+
+###
+### Create /etc/profile.d/sge.sh
+###
 
 yaimlog INFO "Build the scripts which set the proper SGE environment"
 
 SGE_SHENV_FILE=/etc/profile.d/sge.sh
 yaimlog DEBUG "Create $SGE_SHENV_FILE file"
 if [ -e ${SGE_SHENV_FILE} ]; then
-   rm -f ${SGE_SHENV_FILE}
+   yaimlog WARNING "${SGE_SHENV_FILE} exists. It will be overwritten with your current definitions."
 fi
 cat <<EOF_SGE_SHENV_FILE > ${SGE_SHENV_FILE}
 # Define SGE_ROOT directory and SGE commands
@@ -127,10 +141,18 @@ export SGE_CELL=${SGE_CELL}
 . ${SGE_ROOT}/${SGE_CELL}/common/settings.sh
 EOF_SGE_SHENV_FILE
 
+
+#---*---
+
+
+###
+### Create /etc/profile.d/sge.csh
+###
+
 SGE_CSHENV_FILE=/etc/profile.d/sge.csh
 yaimlog DEBUG "Create $SGE_CSHENV_FILE file"
 if [ -e ${SGE_CSHENV_FILE} ]; then
-   rm -f ${SGE_CSHENV_FILE}
+   yaimlog WARNING "${SGE_CSHENV_FILE} exists. It will be overwritten with your current definitions."
 fi
 cat <<EOF_SGE_CSHENV_FILE > ${SGE_CSHENV_FILE}
 # Define SGE_ROOT directory and SGE commands
@@ -139,18 +161,18 @@ setenv SGE_CELL "${SGE_CELL}"
 source ${SGE_ROOT}/${SGE_CELL}/common/settings.csh
 EOF_SGE_CSHENV_FILE
 
+
 #---*---
 
+
+###
+### Create ${SGE_ROOT}/${SGE_CELL}/common/settings.sh
+###
+
 SGE_SHSETTING_FILE=${SGE_ROOT}/${SGE_CELL}/common/settings.sh
-yaimlog DEBUG "Check if ${SGE_SHSETTING_FILE} exists. If not, create it!"
+yaimlog DEBUG "Check if ${SGE_SHSETTING_FILE} exists!"
 if [ -e ${SGE_SHSETTING_FILE} ]; then
-   count=`ls -tr ${SGE_SHSETTING_FILE}.OLD* 2>/dev/null | tail -n 1 | cut -f4 -d"."`
-   if [ "X$count" == "X" ]; then
-       count=0
-   else
-       count=`expr $count + 1`
-   fi
-   mv -f ${SGE_SHSETTING_FILE} ${SGE_SHSETTING_FILE}.OLD.${count}
+     yaimlog WARNING "${SGE_SHSETTING_FILE} exists. It will be overwritten with your current definitions."
 fi
 cat <<EOF_SGE_SHSETTING_FILE > ${SGE_SHSETTING_FILE}
 #!/bin/bash
@@ -179,29 +201,18 @@ EOF_SGE_SHSETTING_FILE
 chmod 644 ${SGE_SHSETTING_FILE}
 source ${SGE_SHENV_FILE}
 
-if [ "X$count" != "X" ]; then
-   diff ${SGE_SHSETTING_FILE}.OLD.${count} ${SGE_SHSETTING_FILE} > /dev/null 2>&1
-fi
-if [ $? == 0 ]; then
-     rm -f ${SGE_SHSETTING_FILE}.OLD.${count}
-else
-     yaimlog WARNING "${SGE_SHSETTING_FILE} exists. Your old file will be saved as ${SGE_SHSETTING_FILE}.OLD.${count}"
-fi
-
-count=""
 
 #---*---
+
+
+###
+### Create ${SGE_ROOT}/${SGE_CELL}/common/settings.csh
+###
 
 SGE_CSHSETTING_FILE=${SGE_ROOT}/${SGE_CELL}/common/settings.csh
 yaimlog DEBUG "Check if ${SGE_CSHSETTING_FILE} exists. If not, create it!"
 if [ -e ${SGE_CSHSETTING_FILE} ]; then
-   count=`ls -tr ${SGE_CSHSETTING_FILE}.OLD* 2>/dev/null | tail -n 1 | cut -f4 -d"."`
-   if [ "X$count" == "X" ]; then
-       count=0
-   else
-       count=`expr $count + 1`
-   fi
-   mv -f ${SGE_CSHSETTING_FILE} ${SGE_CSHSETTING_FILE}.OLD.${count}
+     yaimlog WARNING "${SGE_CSHSETTING_FILE} exists. It will be overwritten with your current definitions."
 fi
 cat <<EOF_SGE_CSHSETTING_FILE > ${SGE_CSHSETTING_FILE}
 #!/bin/tcsh
@@ -231,18 +242,13 @@ unset ARCH DEFAULTMANPATH MANTYPE shlib_path_name
 EOF_SGE_CSHSETTING_FILE
 chmod 644 ${SGE_CSHSETTING_FILE}
 
-if [ "X$count" != "X" ]; then
-   diff ${SGE_CSHSETTING_FILE}.OLD.${count} ${SGE_CSHSETTING_FILE} > /dev/null 2>&1
-fi
-if [ $? == 0 ]; then
-     rm -f ${SGE_CSHSETTING_FILE}.OLD.${count}
-else
-     yaimlog WARNING "${SGE_CSHSETTING_FILE} exists. Your old file will be saved as ${SGE_CSHSETTING_FILE}.OLD.${count}"
-fi
-
-count=""
 
 #---*---
+
+
+###
+### Link SGE binaries to lx26-x86 (original compilation)
+###
 
 yaimlog DEBUG "Link binaries to lx26-x86 (original compilation)"
 
@@ -255,19 +261,13 @@ then
    ln -s $SGE_ROOT/lib/$ARCH_DEFAULT $SGE_ROOT/lib/$ARCH
 fi
 
-#---*---
-
-yaimlog DEBUG "Define default sge_qstat options"
-
-SGE_QSTAT_OPTIONS_FILE=${SGE_ROOT}/${SGE_CELL}/common/sge_qstat
-if [ -e ${SGE_QSTAT_OPTIONS_FILE} ]; then
-   rm -f ${SGE_QSTAT_OPTIONS_FILE}
-fi
-cat <<EOF_SGE_QSTAT_OPTIONS_FILE > ${SGE_QSTAT_OPTIONS_FILE}
--u *
-EOF_SGE_QSTAT_OPTIONS_FILE
 
 #---*---
+
+
+###
+### Setting up service file
+###
 
 SERVICES_FILE="/etc/services"
 yaimlog DEBUG "Modify ${SERVICES_FILE} file and add the appropriate ports for SGE daemons"
@@ -308,6 +308,24 @@ else
         mv -f $SERVICES_FILE.tmp $SERVICES_FILE
      fi
 fi
+
+
+#---*---
+
+
+###
+### Setting up sge_qstat options
+###
+
+yaimlog DEBUG "Define default sge_qstat options"
+
+SGE_QSTAT_OPTIONS_FILE=${SGE_ROOT}/${SGE_CELL}/common/sge_qstat
+if [ -e ${SGE_QSTAT_OPTIONS_FILE} ]; then
+   rm -f ${SGE_QSTAT_OPTIONS_FILE}
+fi
+cat <<EOF_SGE_QSTAT_OPTIONS_FILE > ${SGE_QSTAT_OPTIONS_FILE}
+-u *
+EOF_SGE_QSTAT_OPTIONS_FILE
 
 return 0
 }
