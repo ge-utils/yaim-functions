@@ -71,10 +71,10 @@ fi
 
 if [ "X$SGE_SPOOL_METH" == "Xclassic" ]; then
      SGE_SPOOL_LIB=libspoolc
-     SGE_SPOOL_PAR="${SGE_ROOT}/${SGE_CELL}/spool/qmaster/spooldb"
+     SGE_SPOOL_PAR="${SGE_ROOT}/${SGE_CELL}/common;${SGE_ROOT}/${SGE_CELL}/spool/qmaster"
 elif [ "X$SGE_SPOOL_METH" == "Xberkeleydb" ]; then
      SGE_SPOOL_LIB=libspoolb
-     SGE_SPOOL_PAR="${SGE_ROOT}/${SGE_CELL}/common;${SGE_ROOT}/${SGE_CELL}/spool/qmaster"
+     SGE_SPOOL_PAR="${SGE_ROOT}/${SGE_CELL}/spool/qmaster/spooldb"
 else
      yaimlog ABORT "Unknowned/Unspecified SGE spooling method. Check your SGE_SPOOL_METH definition."
      exit 1
@@ -83,7 +83,7 @@ fi
 BOOTSTRAP_FILE=${SGE_ROOT}/${SGE_CELL}/common/bootstrap
 yaimlog DEBUG "Configuring SGE ${BOOTSTRAP_FILE} file"
 if [ -e ${BOOTSTRAP_FILE} ]; then
-     yaimlog WARNING "${BOOTSTRAP_FILE_FILE} exists! It will be overwritten with your current definitions"
+     yaimlog WARNING "${BOOTSTRAP_FILE} exists! It will be overwritten with your current definitions"
 fi
 
 cat <<EOF_BOOTSTRAP_FILE > ${BOOTSTRAP_FILE}
@@ -97,7 +97,6 @@ binary_path       ${SGE_ROOT}/bin
 qmaster_spool_dir ${SGE_ROOT}/${SGE_CELL}/spool/qmaster
 security_mode     none
 EOF_BOOTSTRAP_FILE
-fi
 
 
 #---*---
@@ -280,8 +279,7 @@ if [ "X${VAR1}" == "X" ]; then
      echo "sge_qmaster     ${SGE_QMASTER}/tcp           # tcp port for SGE Qmaster daemon" >> ${SERVICES_FILE}
 else
      if [ "X${VAR1}" != "X${SGE_QMASTER}/tcp" ]; then
-        yaimlog WARNING "sge_qmaster already defined in $SERVICES_FILE on port $VAR1 and different from ${SGE_QMASTER}/tcp"
-        yaimlog WARNING "Overwrite sge_qmaster port in $SERVICES_FILE using ${SGE_QMASTER}/tcp port"
+        yaimlog WARNING "sge_qmaster already defined in $SERVICES_FILE on port $VAR1 and different from ${SGE_QMASTER}/tcp. Overwrite sge_qmaster port in $SERVICES_FILE using ${SGE_QMASTER}/tcp port"
         VAR1=`echo $VAR1 | cut -f1 -d"/"`
         sed "s/${VAR1}\/tcp/${SGE_QMASTER}\/tcp/g" $SERVICES_FILE > $SERVICES_FILE.tmp
         mv -f $SERVICES_FILE.tmp $SERVICES_FILE
@@ -299,8 +297,7 @@ if [ "X${VAR2}" == "X" ]; then
      echo "sge_execd       ${SGE_EXECD}/tcp           # tcp port for SGE execd service" >> ${SERVICES_FILE}
 else
      if [ "X${VAR2}" != "X${SGE_EXECD}/tcp" ]; then
-        yaimlog WARNING "sge_execd already defined in $SERVICES_FILE on port $VAR2 and different from ${SGE_EXECD}/tcp"
-        yaimlog WARNING "Overwrite sge_execd port in $SERVICES_FILE using ${SGE_EXECD}/tcp port"
+        yaimlog WARNING "sge_execd already defined in $SERVICES_FILE on port $VAR2 and different from ${SGE_EXECD}/tcp. Overwrite sge_execd port in $SERVICES_FILE using ${SGE_EXECD}/tcp port"
         VAR2=`echo $VAR2 | cut -f1 -d"/"`
         sed "s/${VAR2}\/tcp/${SGE_EXECD}\/tcp/g" $SERVICES_FILE > $SERVICES_FILE.tmp
         mv -f $SERVICES_FILE.tmp $SERVICES_FILE

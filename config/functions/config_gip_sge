@@ -76,7 +76,7 @@ if [ -e ${SGE_OLD_INFOPROVIDER} ]; then
 fi
 
 if [ ! -e ${SGE_INFOPROVIDER} ]; then
-   yaimlog ABORT " SGE InfoProvider is not installed !!! Without it the information system will not work ! Exiting ... "
+   yaimlog ABORT "SGE InfoProvider is not installed !!! Without it the information system will not work ! Exiting ... "
    exit 1
 fi
 
@@ -112,16 +112,15 @@ fi
 yaimlog DEBUG "Creating ${SGE_INFOPROVIDER_VQUEUES} file..."
 SGE_INFOPROVIDER_VQUEUES=${SGE_INFOPROVIDER_DIR}/vqueues.conf
 if [ -e ${SGE_INFOPROVIDER_VQUEUES} ]; then
-   yaimlog WARNING "${SGE_INFOPROVIDER_VQUEUES} exists. It will not be changed!"
+   yaimlog WARNING "${SGE_INFOPROVIDER_VQUEUES} exists. It will not be changed!. A recommended configuration will be created under /tmp/sge/etc/sge-jobmanager/vqueues.conf. You can copy it manually!"
    SGE_INFOPROVIDER_VQUEUES="/tmp/sge/etc/sge-jobmanager/vqueues.conf"
    if [ ! -d /tmp/sge/etc/sge-jobmanager ]; then
         mkdir -p /tmp/sge/etc/sge-jobmanager
         chmod 700 /tmp/sge/etc/sge-jobmanager
-   fi
-   yaimlog WARNING "A recommended configuration will be created under ${SGE_INFOPROVIDER_VQUEUES}. You can copy it manually!"        
+   fi       
 fi
 
-cat <<EOF_SGE_INFOPROVIDER_VQUEUES >> ${SGE_INFOPROVIDER_VQUEUES}
+cat <<EOF_SGE_INFOPROVIDER_VQUEUES > ${SGE_INFOPROVIDER_VQUEUES}
 #
 # SGE JobManager queue mapping file
 #
@@ -149,12 +148,11 @@ chmod 644 ${SGE_INFOPROVIDER_VQUEUES}
 SGE_INFOPROVIDER_REPORTER=${SGE_INFOPROVIDER_DIR}/info-reporter.conf
 yaimlog DEBUG "Creating $SGE_INFOPROVIDER_REPORTER file..."
 if [ -e ${SGE_INFOPROVIDER_REPORTER} ]; then
-   yaimlog WARNING "${SGE_INFOPROVIDER_VQUEUES} exists. It will not be changed!"
-   ${SGE_INFOPROVIDER_VQUEUES}="/tmp/sge/etc/sge-jobmanager/info-reporter.conf"
-   yaimlog WARNING "A recommended configuration will be created under ${SGE_INFOPROVIDER_REPORTER}. You can copy it manually!"
+   yaimlog WARNING "${SGE_INFOPROVIDER_VQUEUES} exists. It will not be changed!. A recommended configuration will be created under /tmp/sge/etc/sge-jobmanager/info-reporter.conf. You can copy it manually!"
+   SGE_INFOPROVIDER_VQUEUES="/tmp/sge/etc/sge-jobmanager/info-reporter.conf"
 fi
 
-cat <<EOF_SGE_INFOPROVIDER_REPORTER >> ${SGE_INFOPROVIDER_REPORTER}
+cat <<EOF_SGE_INFOPROVIDER_REPORTER > ${SGE_INFOPROVIDER_REPORTER}
 #
 # Sample configuration file for SGE information reporter
 # ======================================================
@@ -179,7 +177,7 @@ chown 644 ${SGE_INFOPROVIDER_REPORTER}
 SGE_INFOPROVIDER_CLUSTER=${SGE_INFOPROVIDER_DIR}/cluster.state
 yaimlog DEBUG "Set Cluster status to Production in $SGE_INFOPROVIDER_CLUSTER"
 rm -f $SGE_INFOPROVIDER_CLUSTER
-cat <<EOF_SGE_INFOPROVIDER_CLUSTER >> ${SGE_INFOPROVIDER_CLUSTER}
+cat <<EOF_SGE_INFOPROVIDER_CLUSTER > ${SGE_INFOPROVIDER_CLUSTER}
 Production
 EOF_SGE_INFOPROVIDER_CLUSTER
 
@@ -215,7 +213,7 @@ chmod 755 ${CE_PLUGIN_FILE}
 ###
 
 CE_SCHEDULER_WRAPPER_FILE=${INSTALL_ROOT}/glite/etc/gip/plugin/glite-info-dynamic-scheduler-wrapper
-yaimlog DEBUG ""Configure SGE dynamic scheduler wrapper plugin: ${CE_SCHEDULER_WRAPPER_FILE}"
+yaimlog DEBUG "Configure SGE dynamic scheduler wrapper plugin: ${CE_SCHEDULER_WRAPPER_FILE}"
 if [ -e ${CE_SCHEDULER_WRAPPER_FILE} ]; then
    rm -f ${CE_SCHEDULER_WRAPPER_FILE}
 fi
@@ -237,7 +235,7 @@ chmod 755 ${CE_SCHEDULER_WRAPPER_FILE}
 
 CONF_FILE="/opt/glite/etc/lcg-info-dynamic-scheduler.conf"
 if [ ! -e ${CONF_FILE} ]; then
-     yaimlog ABORT " The ${CONF_FILE} doesn't exist. Aborting..."
+     yaimlog ABORT " The ${CONF_FILE} does not exist. Aborting..."
      exit 1
 fi
 

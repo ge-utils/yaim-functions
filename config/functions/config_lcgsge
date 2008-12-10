@@ -44,9 +44,9 @@ function config_lcgsge(){
 
 INSTALL_ROOT=${INSTALL_ROOT:-/opt}
 
-if [ ! -d /tmp/sge/globus/lib/perl/Globus/GRAM/JobManager ]; then
-     mkdir -p /tmp/sge/globus/lib/perl/Globus/GRAM/JobManager
-     chmod 700 /tmp/sge/globus/lib/perl/Globus/GRAM/JobManager
+if [ ! -d /tmp/sge/opt/globus/lib/perl/Globus/GRAM/JobManager ]; then
+     mkdir -p /tmp/sge/opt/globus/lib/perl/Globus/GRAM/JobManager
+     chmod 700 /tmp/sge/opt/globus/lib/perl/Globus/GRAM/JobManager
 fi
 
 yaimlog DEBUG "Get gLite version "
@@ -85,9 +85,8 @@ fi
 SGE_JOBMANAGER_CONF=$INSTALL_ROOT/globus/lib/perl/Globus/GRAM/JobManager/lcgsge.conf
 yaimlog DEBUG "Configuring SGE JM conf file: $SGE_JOBMANAGER_CONF"
 if [ -e ${SGE_JOBMANAGER_CONF} ]; then
-   yaimlog WARNING "${SGE_JOBMANAGER_CONF} exists. It will not be changed!"
-   SGE_CONFIGURATION_FILE="/tmp/sge/globus/lib/perl/Globus/GRAM/JobManager/lcgsge.conf"
-   yaimlog WARNING "A recommended configuration will be created under ${SGE_CONFIGURATION_FILE}. You can copy it to ${INSTALL_ROOT}/globus/lib/perl/Globus/GRAM/JobManager/lcgsge.conf"
+   yaimlog WARNING "${SGE_JOBMANAGER_CONF} exists. It will not be changed!. A recommended configuration will be created under /tmp/sge/opt/globus/lib/perl/Globus/GRAM/JobManager/lcgsge.conf. You can copy it manually!"
+   SGE_JOBMANAGER_CONF="/tmp/sge/opt/globus/lib/perl/Globus/GRAM/JobManager/lcgsge.conf"
 fi
 
 cat <<EOF_SGE_JOBMANAGER_CONF > ${SGE_JOBMANAGER_CONF}
@@ -118,6 +117,7 @@ cat <<EOF_SGE_JOBMANAGER_CONF > ${SGE_JOBMANAGER_CONF}
 \$EXTRA          = '';
 EOF_SGE_JOBMANAGER_CONF
 
+chmod 644 ${SGE_JOBMANAGER_CONF}
 return 0
 }
 
