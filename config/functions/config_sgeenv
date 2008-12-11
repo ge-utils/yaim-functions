@@ -21,9 +21,9 @@
 #
 # AUTHORS     : goncalo@lip.pt
 #
-# NOTES       : - Tested in SGE V60u7_1, V61u3
+# NOTES       : Tested in SGE V60u7_1, V61u3
 #
-# YAIM MODULE : glite-yaim-sge-utils
+# YAIM MODULE : glite-yaim-sge-utils, glite-yaim-sge-server, glite-yaim-sge-client
 #
 ###############################################################################
 
