@@ -63,7 +63,7 @@ cat ${INSTALL_ROOT}/glite/etc/glite-apel-sge/parser-config.xml | sed \
     -e "s/localhost/${MON_HOST}/" \
     -e "s/<DBUsername>.*/<DBUsername>accounting<\/DBUsername>/" \
     -e "s/<DBPassword>.*/<DBPassword>${APEL_DB_PASSWORD}<\/DBPassword>/" \
-    -e "s/<SubmitHost>.*/<SubmitHost>${BATCH_SERVER}<\/SubmitHost>/" \
+    -e "s/<SubmitHost>.*/<SubmitHost>${CE_HOST}<\/SubmitHost>/" \
     -e "s/<SiteName>.*/<SiteName>${SITE_NAME}<\/SiteName>/" \
     -e "s/<Dir>\/var\/spool\/pbs\/server_priv\/accounting<\/Dir>/<Dir>${BATCH_LOGS_DIR}<\/Dir>/" \
     -e "s/<GIIS>.*/<GIIS>${CE_HOST}<\/GIIS>/" \
