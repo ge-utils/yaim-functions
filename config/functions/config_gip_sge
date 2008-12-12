@@ -52,8 +52,7 @@ yaimlog DEBUG "Get gLite version "
 
 glite_version=`/opt/glite/bin/glite-version | cut -d '.' -f1-2`
 if [ "X$glite_version" == "X" -o "X$glite_version" != "X3.1" ]; then
-   yaimlog ABORT "gLite version not supported. Exiting..."
-   exit 1
+   yaimlog WARNING "gLite version not supported anymore..."
 else
    yaimlog DEBUG "Running SGE Information Provider configuration for gLite version >= 3.1"
 fi
