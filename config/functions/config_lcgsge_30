@@ -44,6 +44,11 @@ function config_lcgsge_30(){
 
 INSTALL_ROOT=${INSTALL_ROOT:-/opt}
 
+if [ ! -d /tmp/sge/opt/globus/lib/perl/Globus/GRAM/JobManager ]; then
+     mkdir -p /tmp/sge/opt/globus/lib/perl/Globus/GRAM/JobManager
+     chmod 700 /tmp/sge/opt/globus/lib/perl/Globus/GRAM/JobManager
+fi
+
 yaimlog DEBUG "Get gLite version "
 
 glite_version=`/opt/glite/bin/glite-version | cut -d '.' -f1-2`
@@ -51,10 +56,16 @@ if [ "X$glite_version" == "X" -o "X$glite_version" != "X3.0" ]; then
    yaimlog ABORT "gLite version not supported. Exiting..."
    exit 1
 else
-   yaimlog DEBUG "Running JobManager SGE configuration for gLite version = 3.0"
+   yaimlog WARNING "gLite version 3.0 not properly supported anymore..."
 fi
 
+
 #---*---
+
+
+###
+### Build JobManager configuration files based on CESGA implementation
+###
 
 yaimlog INFO "Build JobManager configuration files based on CESGA implementation"
 
@@ -65,26 +76,21 @@ if [ ! -e ${SGE_JOBMANAGER} ]; then
 fi
 
 if [ -e ${SGE_JOBMANAGER}.rpmnew ]; then
-   yaimlog WARNING "New ${SGE_JOBMANAGER} is deployed as .rpmnew in order to not overright your JM changes. Old ${SGE_JOBMANAGER} is still in place."
+   yaimlog WARNING "New ${SGE_JOBMANAGER} is deployed as .rpmnew in order not to overwrite local JM changes. Old ${SGE_JOBMANAGER} is still in place."
 fi
 
 if [ -e ${SGE_JOBMANAGER}.rpmsave ]; then
    yaimlog WARNING "Previous ${SGE_JOBMANAGER} is saved as .rpmsave. New ${SGE_JOBMANAGER} is in place."
 fi
 
-
 SGE_JOBMANAGER_CONF=$INSTALL_ROOT/globus/lib/perl/Globus/GRAM/JobManager/lcgsge.conf
-yaimlog DEBUG " Installing SGE JM conf file: $SGE_JOBMANAGER_CONF" 
+yaimlog DEBUG "Configuring SGE JM conf file: $SGE_JOBMANAGER_CONF"
 if [ -e ${SGE_JOBMANAGER_CONF} ]; then
-   count=`ls -tr ${SGE_JOBMANAGER_CONF}.OLD* 2>/dev/null | tail -n 1 | cut -f4 -d"."`
-   if [ "X$count" == "X" ]; then
-       count=0
-   else
-       count=`expr $count + 1`
-   fi
-   mv -f ${SGE_JOBMANAGER_CONF} ${SGE_JOBMANAGER_CONF}.OLD.${count}
+   yaimlog WARNING "${SGE_JOBMANAGER_CONF} exists. It will not be changed!. A recommended configuration will be created under /tmp/sge/opt/globus/lib/perl/Globus/GRAM/JobManager/lcgsge.conf. You can copy it manually!"
+   SGE_JOBMANAGER_CONF="/tmp/sge/opt/globus/lib/perl/Globus/GRAM/JobManager/lcgsge.conf"
 fi
-cat <<EOF_SGE_JOBMANAGER_CONF > $SGE_JOBMANAGER_CONF
+
+cat <<EOF_SGE_JOBMANAGER_CONF > ${SGE_JOBMANAGER_CONF}
 # SGE JM Configuration File
 #
 # SGE paths
@@ -94,7 +100,7 @@ cat <<EOF_SGE_JOBMANAGER_CONF > $SGE_JOBMANAGER_CONF
 # In case SGE forces to specify a given set of parameters you can
 # specify the default values in this section
 # If you don't need to define some parameter you should to set it
-# to an empty string or to 0. 
+# to an empty string or to 0.
 # Parameters that could be availables in the jdl file
 # These values are only use in case a value is not specified
 # in the jdl file
@@ -112,20 +118,17 @@ cat <<EOF_SGE_JOBMANAGER_CONF > $SGE_JOBMANAGER_CONF
 \$EXTRA          = '';
 EOF_SGE_JOBMANAGER_CONF
 
-if [ "X$count" != "X" ]; then
-   diff ${SGE_JOBMANAGER_CONF}.OLD.${count} ${SGE_JOBMANAGER_CONF} > /dev/null 2>&1
-fi
-if [ $? == 0 ]; then
-     rm -f ${SGE_JOBMANAGER_CONF}.OLD.${count}
-else
-     yaimlog WARNING " ${SGE_JOBMANAGER_CONF} exists. Your old file will be saved as ${SGE_JOBMANAGER_CONF}.OLD.${count}"
-fi
+chmod 644 ${SGE_JOBMANAGER_CONF}
 
-count=""
 
 #---*---
 
-yaimlog DEBUG " Updating /etc/globus.conf to recognize the lcgsge JobManager"
+
+###
+### Update /etc/globus.conf
+###
+
+yaimlog DEBUG "Updating /etc/globus.conf to recognize the lcgsge JobManager"
 LCGSGE_GLOBUS=`grep "\[gatekeeper/lcgsge\]" /etc/globus.conf`
 if [ "X${LCGSGE_GLOBUS}" = "X" ]; then
     cat <<EOF >> /etc/globus.conf
@@ -142,10 +145,16 @@ if [ "X$strg1" != "X$strg2" ]; then
         mv -f /tmp/globus.conf /etc/globus.conf
 fi
 
+
 #---*---
 
+
+###
+### Update lcgsge.rvf
+###
+
 SGE_LCGSGE_RVF=$INSTALL_ROOT/globus/share/globus_gram_job_manager/lcgsge.rvf
-yaimlog DEBUG " Updating ${SGE_LCGSGE_RVF} file for SGE queues"
+yaimlog DEBUG "Updating ${SGE_LCGSGE_RVF} file for SGE queues"
 if [ -e ${SGE_LCGSGE_RVF} ]; then
    count=`ls -tr ${SGE_LCGSGE_RVF}.OLD* 2>/dev/null | tail -n 1 | cut -f4 -d"."`
    if [ "X$count" == "X" ]; then
