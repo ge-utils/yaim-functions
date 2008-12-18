@@ -147,8 +147,8 @@ chmod 644 ${SGE_INFOPROVIDER_VQUEUES}
 SGE_INFOPROVIDER_REPORTER=${SGE_INFOPROVIDER_DIR}/info-reporter.conf
 yaimlog DEBUG "Creating $SGE_INFOPROVIDER_REPORTER file..."
 if [ -e ${SGE_INFOPROVIDER_REPORTER} ]; then
-   yaimlog WARNING "${SGE_INFOPROVIDER_VQUEUES} exists. It will not be changed!. A recommended configuration will be created under /tmp/sge/etc/sge-jobmanager/info-reporter.conf. You can copy it manually!"
-   SGE_INFOPROVIDER_VQUEUES="/tmp/sge/etc/sge-jobmanager/info-reporter.conf"
+   yaimlog WARNING "${SGE_INFOPROVIDER_REPORTER} exists. It will not be changed!. A recommended configuration will be created under /tmp/sge/etc/sge-jobmanager/info-reporter.conf. You can copy it manually!"
+   SGE_INFOPROVIDER_REPORTER="/tmp/sge/etc/sge-jobmanager/info-reporter.conf"
 fi
 
 cat <<EOF_SGE_INFOPROVIDER_REPORTER > ${SGE_INFOPROVIDER_REPORTER}
