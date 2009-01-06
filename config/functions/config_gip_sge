@@ -187,7 +187,7 @@ chown 644 ${SGE_INFOPROVIDER_CLUSTER}
 
 
 ###
-### Set /glite/etc/gip/plugin/glite-info-dynamic-ce
+### Set /opt/glite/etc/gip/plugin/glite-info-dynamic-ce
 ###
 
 CE_PLUGIN_FILE=${INSTALL_ROOT}/glite/etc/gip/plugin/glite-info-dynamic-ce
@@ -252,7 +252,7 @@ else
      LRMS_ARG=`grep lrms_backend_cmd $CONF_FILE | cut -f2 -d ":" | sed 's/ //g'`
      if [ "X${LRMS_ARG}" != "X/opt/glite/libexec/sge_helper--lrmsinfo-c/opt/glite/etc/lcg-info-dynamic-scheduler.conf" ]; then
           yaimlog INFO "lrms_backend_cmd not properly configured. Fixing..."
-          sed 's/lrms_backend_cmd.*/lrms_backend_cmd: \/opt\/lcg\/libexec\/sge_helper --lrmsinfo -c \/opt\/glite\/etc\/lcg\-info\-dynamic\-scheduler.conf/g' $CONF_FILE > /tmp/lcg-info-dynamic-scheduler.conf
+          sed 's/lrms_backend_cmd.*/lrms_backend_cmd: \/opt\/glite\/libexec\/sge_helper --lrmsinfo -c \/opt\/glite\/etc\/lcg\-info\-dynamic\-scheduler.conf/g' $CONF_FILE > /tmp/lcg-info-dynamic-scheduler.conf
            mv -f /tmp/lcg-info-dynamic-scheduler.conf $CONF_FILE
      fi
 fi
@@ -271,7 +271,7 @@ else
      SCHED_ARG=`grep vo_max_jobs_cmd $CONF_FILE | cut -f2 -d ":" | sed 's/ //g'`
      if [ "X${LRMS_ARG}" != "X/opt/glite/libexec/sge_helper--vomaxjobs-c/opt/glite/etc/lcg-info-dynamic-scheduler.conf" ]; then
           yaimlog INFO "vo_max_jobs_cmd not properly configured. Fixing..."
-          sed 's/vo_max_jobs_cmd.*/vo_max_jobs_cmd: \/opt\/lcg\/libexec\/sge_helper --vomaxjobs -c \/opt\/glite\/etc\/lcg\-info\-dynamic\-scheduler.conf/g' $CONF_FILE > /tmp/lcg-info-dynamic-scheduler.conf
+          sed 's/vo_max_jobs_cmd.*/vo_max_jobs_cmd: \/opt\/glite\/libexec\/sge_helper --vomaxjobs -c \/opt\/glite\/etc\/lcg\-info\-dynamic\-scheduler.conf/g' $CONF_FILE > /tmp/lcg-info-dynamic-scheduler.conf
            mv -f /tmp/lcg-info-dynamic-scheduler.conf $CONF_FILE
      fi
 fi
