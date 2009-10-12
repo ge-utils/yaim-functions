@@ -30,8 +30,7 @@
 
 
 function config_sgegg_check(){
-    requires $1 SGE_ROOT SGE_CELL CE_BATCH_SYS BATCH_BIN_DIR BLPARSER_HOST BLP_PORT BLAH_CHILD_POLL_TIMEOUT \
-           GLITE_LOCATION GLITE_LOCATION_LOG BLPARSER_WITH_UPDATER_NOTIFIER
+    requires $1 SGE_ROOT SGE_CELL CE_BATCH_SYS BATCH_BIN_DIR GLITE_LOCATION GLITE_LOCATION_LOG 
     return $?
 }
 
@@ -147,6 +146,8 @@ fi
 
 if ( echo " ${NODE_TYPE_LIST} " | egrep -q "CE" ) && ( echo " ${NODE_TYPE_LIST} " | egrep -q 'creamCE' ); then
 
+	BLPARSER_WITH_UPDATER_NOTIFIER=true
+
 ###
 ### Variables setup for blahp.log
 ###
@@ -177,8 +178,8 @@ if ( echo " ${NODE_TYPE_LIST} " | egrep -q "CE" ) && ( echo " ${NODE_TYPE_LIST} 
   	blah_nologaccess=
   	blah_fallback=no
   	blah_blp=yes
-  	blah_blp_server=$BLPARSER_HOST
-  	blah_blp_port=$BLP_PORT
+  	blah_blp_server=
+  	blah_blp_port=
   	blah_blp_num=
   	blah_blp_server1=
   	blah_blp_server2=
@@ -203,7 +204,7 @@ if ( echo " ${NODE_TYPE_LIST} " | egrep -q "CE" ) && ( echo " ${NODE_TYPE_LIST} 
 # Supported batch systems
 supported_lrms=$blah_lrms
 
-blah_child_poll_timeout=$BLAH_CHILD_POLL_TIMEOUT 
+blah_child_poll_timeout=200 
 
 ${row_to_add}
 
@@ -268,7 +269,7 @@ EOF
 ### but BNOTIFIER is used instead 
 ###
 
-	if [ ${BLPARSER_WITH_UPDATER_NOTIFIER} = true ]; then
+	if [ "X${BLPARSER_WITH_UPDATER_NOTIFIER}" == "Xtrue" ]; then
 
                 yaimlog DEBUG "Append BNotifier definitions to $SCRIPT..."
 
@@ -345,7 +346,7 @@ EOF
 ### /etc/logrotate.d/bnotifier-logrotate
 ###
 
-	if [ ${BLPARSER_WITH_UPDATER_NOTIFIER} = true ]; then
+	if [ "X${BLPARSER_WITH_UPDATER_NOTIFIER}" == "Xtrue" ]; then
   		SCRIPT=/etc/logrotate.d/bupdater-logrotate
 
 		yaimlog DEBUG "Set up $SCRIPT..."
