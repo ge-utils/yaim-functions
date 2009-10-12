@@ -1,7 +1,0 @@
-SGE_utils_FUNCTIONS="
-config_apel_sge
-config_sgeenv
-config_sge2ce
-config_lcgsge_30
-config_gip_sge
-config_ssh_sge"

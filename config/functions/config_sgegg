@@ -1,0 +1,391 @@
+###############################################################################
+# Copyright (c) Members of the EGEE Collaboration. 2004.
+# See http://www.eu-egee.org/partners/ for details on the copyright holders.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+###############################################################################
+#
+# NAME        : config_sgegg
+#
+# DESCRIPTION : This function implements the SGE integration with the Grid Gateway
+#
+# AUTHORS     : goncalo@lip.pt
+#
+# NOTES       : - Tested in SGE V60u7_1, V61u3
+#             : - Configures the SGE infoprovider and SGE JobManager
+#
+# YAIM MODULE : glite-yaim-sge-utils
+#
+###############################################################################
+
+
+function config_sgegg_check(){
+    requires $1 SGE_ROOT SGE_CELL CE_BATCH_SYS BATCH_BIN_DIR BLPARSER_HOST BLP_PORT BLAH_CHILD_POLL_TIMEOUT \
+           GLITE_LOCATION GLITE_LOCATION_LOG BLPARSER_WITH_UPDATER_NOTIFIER
+    return $?
+}
+
+
+function config_sgegg_setenv(){
+    return 0
+}
+
+
+function config_sgegg(){
+
+INSTALL_ROOT=${INSTALL_ROOT:-/opt}
+
+###
+### Get gLite version
+###
+
+yaimlog DEBUG "Getting gLite version... "
+
+glite_version=`/opt/glite/bin/glite-version | cut -d '.' -f1-2`
+if [ "X$glite_version" != "X" ]; then
+   if  [ "X$glite_version" != "X3.1" -a "X$glite_version" != "X3.2" ]; then
+          yaimlog ABORT "gLite version not supported. Exiting..."
+          exit 1
+   fi
+else
+   yaimlog ABORT "Unable to get glite version. Exiting..."
+   exit 1
+fi
+
+yaimlog DEBUG "Running SGE Grid Gateway configuration for gLite version $glite_version!"
+
+
+#*****************************************************************************************
+#***************************************** LCG-CE ****************************************
+#*****************************************************************************************
+
+if ( echo " ${NODE_TYPE_LIST} " | egrep -q "CE" ) && ( ! echo " ${NODE_TYPE_LIST} " | egrep -q 'creamCE' ); then
+
+	if [ ! -d /tmp/sge/opt/globus/lib/perl/Globus/GRAM/JobManager ]; then
+     		mkdir -p /tmp/sge/opt/globus/lib/perl/Globus/GRAM/JobManager
+     		chmod 700 /tmp/sge/opt/globus/lib/perl/Globus/GRAM/JobManager
+	fi
+
+
+#---*---
+
+###
+### Build JobManager configuration files based on CESGA implementation
+###
+
+	yaimlog INFO "Build JobManager configuration files based on CESGA implementation"
+
+	SGE_JOBMANAGER=$INSTALL_ROOT/globus/lib/perl/Globus/GRAM/JobManager/lcgsge.pm
+	if [ ! -e ${SGE_JOBMANAGER} ]; then
+   		yaimlog ABORT "${SGE_JOBMANAGER} is not installed !!! Without it job management will not work!!! Exiting..."
+   		exit 1
+	fi
+
+	if [ -e ${SGE_JOBMANAGER}.rpmnew ]; then
+   		yaimlog WARNING "New ${SGE_JOBMANAGER} is deployed as .rpmnew in order not to overwrite local JM changes. Old ${SGE_JOBMANAGER} is still in place."
+	fi
+
+	if [ -e ${SGE_JOBMANAGER}.rpmsave ]; then
+   		yaimlog WARNING "Previous ${SGE_JOBMANAGER} is saved as .rpmsave. New ${SGE_JOBMANAGER} is in place."
+	fi
+
+	SGE_JOBMANAGER_CONF=$INSTALL_ROOT/globus/lib/perl/Globus/GRAM/JobManager/lcgsge.conf
+	yaimlog DEBUG "Configuring SGE JM conf file: $SGE_JOBMANAGER_CONF"
+	if [ -e ${SGE_JOBMANAGER_CONF} ]; then
+   		yaimlog WARNING "${SGE_JOBMANAGER_CONF} exists. It will not be changed!. A recommended configuration will be created under /tmp/sge/opt/globus/lib/perl/Globus/GRAM/JobManager/lcgsge.conf. You can copy it manually!"
+   		SGE_JOBMANAGER_CONF="/tmp/sge/opt/globus/lib/perl/Globus/GRAM/JobManager/lcgsge.conf"
+	fi
+
+	cat <<EOF_SGE_JOBMANAGER_CONF > ${SGE_JOBMANAGER_CONF}
+# SGE JM Configuration File
+#
+# SGE paths
+\$SGE_BASE_PATH    = '$SGE_ROOT';
+\$SGE_BIN_PATH     = '$SGE_ROOT/bin/$ARCH';
+# Default values for SGE required complex values
+# In case SGE forces to specify a given set of parameters you can
+# specify the default values in this section
+# If you don't need to define some parameter you should to set it
+# to an empty string or to 0. 
+# Parameters that could be availables in the jdl file
+# These values are only use in case a value is not specified
+# in the jdl file
+# max cpu time
+#\$S_RT           = '10:00:00';
+\$S_RT            = '';
+# max memory
+#\$S_VMEM         = '512M';
+\$S_VMEM          = '';
+# number of processors
+#\$NUM_PROC       = 1;
+\$NUM_PROC        = 0;
+# Extra parameters not available in the jdl file.
+#\$EXTRA          = 'h_fsize=5G,s_cpu=0:10:0';
+\$EXTRA          = '';
+EOF_SGE_JOBMANAGER_CONF
+
+	chmod 644 ${SGE_JOBMANAGER_CONF}
+
+# End of the if for NODE TYPE "CE"
+fi
+
+
+#*****************************************************************************************
+#***************************************** CreamCE ***************************************
+#*****************************************************************************************
+
+
+if ( echo " ${NODE_TYPE_LIST} " | egrep -q "CE" ) && ( echo " ${NODE_TYPE_LIST} " | egrep -q 'creamCE' ); then
+
+###
+### Variables setup for blahp.log
+###
+
+        SCRIPT="/opt/glite/etc/blah.config"
+
+        yaimlog DEBUG "Backup $SCRIPT to $SCRIPT.old"
+
+	# backup old file
+  	SCRIPT=/opt/glite/etc/blah.config
+  	if [ -f $SCRIPT ]; then
+    		cp $SCRIPT $SCRIPT.old
+  	fi 
+
+  	# local variables definition
+  	mkdir -p /opt/glite/var/log/accounting
+  	chown root.${TOMCAT_USER} /opt/glite/var/log/accounting
+  	chmod 0730 /opt/glite/var/log/accounting
+
+        yaimlog DEBUG "Set up variables to fill $SCRIPT..."
+
+	blah_lrms=sge
+  	blah_accounting_log=/opt/glite/var/log/accounting/blahp.log
+  	blah_bin=${BATCH_BIN_DIR}
+  	blah_conf=
+  	blah_spool=${BATCH_LOG_DIR}
+  	blah_nochecksubmission=yes
+  	blah_nologaccess=
+  	blah_fallback=no
+  	blah_blp=yes
+  	blah_blp_server=$BLPARSER_HOST
+  	blah_blp_port=$BLP_PORT
+  	blah_blp_num=
+  	blah_blp_server1=
+  	blah_blp_server2=
+  	blah_blp_port1=
+  	blah_blp_port2=
+  	row_to_add=""
+ 
+ 	 # New parser
+  	bupdater_bin_path=${GLITE_LOCATION}/bin/BUpdaterSGE
+
+
+# ---*---
+
+
+###
+### Start building blahp.log
+###
+
+        yaimlog DEBUG "Start building $SCRIPT..."
+
+  	cat << EOF > $SCRIPT 
+# Supported batch systems
+supported_lrms=$blah_lrms
+
+blah_child_poll_timeout=$BLAH_CHILD_POLL_TIMEOUT 
+
+${row_to_add}
+
+# Needed to implement the short term solution for proxy renewal (savannah task #8176) 
+blah_disable_wn_proxy_renewal=yes 
+
+# DGAS logfile 
+BLAHPD_ACCOUNTING_INFO_LOG=$blah_accounting_log
+
+# Path where ${blah_lrms} executables are located 
+${blah_lrms}_binpath=$blah_bin
+
+# Path where the ${blah_lrms} conf file is located
+${blah_lrms}_confpath=$blah_conf
+
+# Path where the ${blah_lrms} logs are located (for pbs \$pbs_spoolpath/server_logs)
+${blah_lrms}_spoolpath=$blah_spool
+
+# If it is set to yes blah does not check the jobid in the logfiles
+${blah_lrms}_nochecksubmission=$blah_nochecksubmission
+
+# If it is set to yes blah does NOT use log files to get job status, 
+# but uses only standard LRMS query
+${blah_lrms}_nologaccess=$blah_nologaccess
+
+# If it is set to no blah scripts for ${blah_lrms} will not try to read 
+# locally from the logs if BLParser is not present
+${blah_lrms}_fallback=$blah_fallback
+
+# Set to yes to use Blah Log Parser for ${blah_lrms}
+${blah_lrms}_BLParser=$blah_blp
+
+# Host where Blah Log Parser for ${blah_lrms} is running
+${blah_lrms}_BLPserver=$blah_blp_server
+
+# Port where Blah Log Parser for ${blah_lrms} is running
+${blah_lrms}_BLPport=$blah_blp_port
+
+# Number of Blah Log Parser to try for ${blah_lrms}
+# (if it is null ${blah_lrms}_BLPserver and ${blah_lrms}_BLPport are used)
+${blah_lrms}_num_BLParser=$blah_blp_num
+
+${blah_lrms}_BLPserver1=$blah_blp_server1
+${blah_lrms}_BLPport1=$blah_blp_port1
+
+${blah_lrms}_BLPserver2=$blah_blp_server2
+${blah_lrms}_BLPport2=$blah_blp_port2
+
+sge_root="$SGE_ROOT"
+sge_cell="$SGE_CELL"
+sge_helper=/opt/glite/bin/sge_helper
+
+EOF
+
+
+# ---*---
+
+
+###
+### Continue building blahp.log
+### Important info must be added if BLPARSER is not used
+### but BNOTIFIER is used instead 
+###
+
+	if [ ${BLPARSER_WITH_UPDATER_NOTIFIER} = true ]; then
+
+                yaimlog DEBUG "Append BNotifier definitions to $SCRIPT..."
+
+    		if [ ! -f ${GLITE_LOCATION_VAR}/blah ]; then
+      			mkdir -p ${GLITE_LOCATION_VAR}/blah
+      			chown tomcat.tomcat ${GLITE_LOCATION_VAR}/blah
+      			chmod 771 ${GLITE_LOCATION_VAR}/blah
+    		fi
+    		cat << EOF >> $SCRIPT
+# New parser section
+job_registry=/var/tmp/cream_tomcat_registry.db
+async_notification_port=33329
+async_notification_host=localhost
+
+# about 2 months of purge interval.
+purge_interval=5000000
+
+#Updater location
+bupdater_path=/opt/glite/bin/BUpdaterSGE
+
+#Notifier location
+bnotifier_path=${GLITE_LOCATION}/bin/BNotifier
+
+#Updater pid file
+bupdater_pidfile=/var/tmp/cream_tomcat_bupdater.pid
+
+#Notifier pid file
+bnotifier_pidfile=/var/tmp/cream_tomcat_bnotifier.pid
+
+#Updater debug level
+bupdater_debug_level=2
+
+#Updater debug log file
+bupdater_debug_logfile=${GLITE_LOCATION_VAR}/log/glite-ce-bupdater.log
+
+#Notifier debug level
+bnotifier_debug_level=2
+
+#Notifier debug log file
+bnotifier_debug_logfile=${GLITE_LOCATION_VAR}/log/glite-ce-bnotifier.log
+
+blah_children_restart_interval=0
+EOF
+	fi
+
+
+# ---*---
+
+
+###
+### /etc/logrotate.d/blahp-logrotate - BEGIN
+###
+
+	SCRIPT=/etc/logrotate.d/blahp-logrotate
+
+        yaimlog DEBUG "Set up $SCRIPT..."
+
+  	cat << EOF > $SCRIPT
+${GLITE_LOCATION_LOG}/accounting/blahp.log {
+        copytruncate
+        rotate 50
+        size = 10M
+        missingok
+        nomail
+}
+EOF
+
+
+# ---*---
+
+
+###
+### /etc/logrotate.d/bupdater-logrotate
+### /etc/logrotate.d/bnotifier-logrotate
+###
+
+	if [ ${BLPARSER_WITH_UPDATER_NOTIFIER} = true ]; then
+  		SCRIPT=/etc/logrotate.d/bupdater-logrotate
+
+		yaimlog DEBUG "Set up $SCRIPT..."
+
+    		cat << EOF > $SCRIPT
+${GLITE_LOCATION_LOG}/glite-ce-bupdater.log {
+        copytruncate
+        rotate 50
+        size = 10M
+        missingok
+        nomail
+}
+EOF
+  		SCRIPT=/etc/logrotate.d/bnotifier-logrotate
+
+		yaimlog DEBUG "Set up $SCRIPT..."
+
+    		cat << EOF > $SCRIPT
+${GLITE_LOCATION_LOG}/glite-ce-bnotifier.log  
+ {
+        copytruncate
+        rotate 50
+        size = 10M
+        missingok
+        nomail
+}
+EOF
+
+	fi
+
+###
+### Set hourly cron for logrotate
+###
+	if [[ ! -f /etc/cron.hourly/logrotate ]]; then
+    		mv -f `find /etc -name logrotate` /etc/cron.hourly/
+  	fi
+
+fi
+
+return 0
+
+}
+

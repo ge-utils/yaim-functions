@@ -43,19 +43,25 @@ function config_gip_sge(){
 
 INSTALL_ROOT=${INSTALL_ROOT:-/opt}
 
-yaimlog DEBUG "Get gLite version "
-
 
 ###
 ### Get glite version
 ###
 
+yaimlog DEBUG "Getting gLite version... "
+
 glite_version=`/opt/glite/bin/glite-version | cut -d '.' -f1-2`
-if [ "X$glite_version" == "X" -o "X$glite_version" != "X3.1" ]; then
-   yaimlog WARNING "gLite version not supported anymore..."
+if [ "X$glite_version" != "X" ]; then
+   if  [ "X$glite_version" != "X3.1" -a "X$glite_version" != "X3.2" ]; then
+          yaimlog ABORT "gLite version not supported. Exiting..."
+          exit 1
+   fi
 else
-   yaimlog DEBUG "Running SGE Information Provider configuration for gLite version >= 3.1"
+   yaimlog ABORT "Unable to get glite version. Exiting..."
+   exit 1
 fi
+
+yaimlog DEBUG "Running SGE GIP configuration for gLite version $glite_version!"
 
 
 #---*---
@@ -104,12 +110,13 @@ fi
 ###
 
 SGE_INFOPROVIDER_DIR=/etc/sge-jobmanager
+SGE_INFOPROVIDER_VQUEUES=${SGE_INFOPROVIDER_DIR}/vqueues.conf
 if [ ! -d ${SGE_INFOPROVIDER_DIR} ]; then
    mkdir ${SGE_INFOPROVIDER_DIR}
 fi 
 
 yaimlog DEBUG "Creating ${SGE_INFOPROVIDER_VQUEUES} file..."
-SGE_INFOPROVIDER_VQUEUES=${SGE_INFOPROVIDER_DIR}/vqueues.conf
+
 if [ -e ${SGE_INFOPROVIDER_VQUEUES} ]; then
    yaimlog WARNING "${SGE_INFOPROVIDER_VQUEUES} exists. It will not be changed!. A recommended configuration will be created under /tmp/sge/etc/sge-jobmanager/vqueues.conf. You can copy it manually!"
    SGE_INFOPROVIDER_VQUEUES="/tmp/sge/etc/sge-jobmanager/vqueues.conf"
@@ -145,7 +152,9 @@ chmod 644 ${SGE_INFOPROVIDER_VQUEUES}
 ###
 
 SGE_INFOPROVIDER_REPORTER=${SGE_INFOPROVIDER_DIR}/info-reporter.conf
+
 yaimlog DEBUG "Creating $SGE_INFOPROVIDER_REPORTER file..."
+
 if [ -e ${SGE_INFOPROVIDER_REPORTER} ]; then
    yaimlog WARNING "${SGE_INFOPROVIDER_REPORTER} exists. It will not be changed!. A recommended configuration will be created under /tmp/sge/etc/sge-jobmanager/info-reporter.conf. You can copy it manually!"
    SGE_INFOPROVIDER_REPORTER="/tmp/sge/etc/sge-jobmanager/info-reporter.conf"
@@ -174,7 +183,9 @@ chown 644 ${SGE_INFOPROVIDER_REPORTER}
 ###
 
 SGE_INFOPROVIDER_CLUSTER=${SGE_INFOPROVIDER_DIR}/cluster.state
+
 yaimlog DEBUG "Set Cluster status to Production in $SGE_INFOPROVIDER_CLUSTER"
+
 rm -f $SGE_INFOPROVIDER_CLUSTER
 cat <<EOF_SGE_INFOPROVIDER_CLUSTER > ${SGE_INFOPROVIDER_CLUSTER}
 Production
@@ -191,7 +202,9 @@ chown 644 ${SGE_INFOPROVIDER_CLUSTER}
 ###
 
 CE_PLUGIN_FILE=${INSTALL_ROOT}/glite/etc/gip/plugin/glite-info-dynamic-ce
+
 yaimlog DEBUG "Configure SGE dynamic information plugin: ${CE_PLUGIN_FILE}"
+
 if [ -e ${CE_PLUGIN_FILE} ]; then
    rm -f ${CE_PLUGIN_FILE}
 fi 
@@ -212,7 +225,9 @@ chmod 755 ${CE_PLUGIN_FILE}
 ###
 
 CE_SCHEDULER_WRAPPER_FILE=${INSTALL_ROOT}/glite/etc/gip/plugin/glite-info-dynamic-scheduler-wrapper
+
 yaimlog DEBUG "Configure SGE dynamic scheduler wrapper plugin: ${CE_SCHEDULER_WRAPPER_FILE}"
+
 if [ -e ${CE_SCHEDULER_WRAPPER_FILE} ]; then
    rm -f ${CE_SCHEDULER_WRAPPER_FILE}
 fi

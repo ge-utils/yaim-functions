@@ -15,7 +15,7 @@
 # limitations under the License.
 ###############################################################################
 #
-# NAME        : config_sge2ce
+# NAME        : config_sgesub
 #
 # DESCRIPTION : This function sets SGE submission options
 #
@@ -28,18 +28,18 @@
 ###############################################################################
 
 
-function config_sge2ce_check(){
+function config_sgesub_check(){
     requires $1 SGE_ROOT SGE_CELL
     return $?
 }
 
 
-function config_sge2ce_setenv(){
+function config_sgesub_setenv(){
     return 0
 }
 
 
-function config_sge2ce(){
+function config_sgesub(){
 
 INSTALL_ROOT=${INSTALL_ROOT:-/opt}
 

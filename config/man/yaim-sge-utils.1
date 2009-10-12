@@ -1,10 +1,10 @@
 .TH "YAIM-SGE-UTILS" 1
 .SH NAME
 The yaim-sge-utils module is a yaim plugin to configure Sun Grid Engine batch system, and to enable 
-its proper interaction with an EGEE Computing Element. At the moment, only the LCG-CE 3.1 is supported.
-It assumes that the SGE software and that the glite-SGE_utils meta-package are already installed 
-(see the "Generic Installation and Configuration Guide for gLite 3.1"). The last tried SGE version 
-was SGE V6.1u3.  
+its proper interaction with an EGEE Computing Element. At the moment, LCG-CE 3.1  and CreamCE are now 
+supported. It assumes that the SGE software and that the glite-SGE_utils meta-package are already 
+installed (see the "Generic Installation and Configuration Guide for gLite 3.1"). The last tried 
+SGE version was SGE V6.1u3.  
 
 
 .SH DESCRIPTION
@@ -58,7 +58,7 @@ SGE_SPOOL_METH : SGE spooling method. Default is classic
 .SH EXAMPLES
 How to configure the SGE_utils node.
 .TP
-.B ./yaim -c -s /root/site-info.def -n lcg-CE -n SGE_utils
+.B ./yaim -c -s /root/site-info.def -n lcg-CE|creamCE -n SGE_utils
 
 
 .SH DOCUMENTATION
@@ -82,7 +82,7 @@ Useful links:
 
 
 .SH AUTHORS
-yaim-sge-utils was developed by Goncalo Borges 
+yaim-sge-utils was developed by Goncalo Borges, LIP, Lisbon, Portugal
 .B goncalo@lip.pt
 
 

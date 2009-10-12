@@ -43,6 +43,24 @@ function config_sgeenv(){
 
 INSTALL_ROOT=${INSTALL_ROOT:-/opt}
 
+###
+### Some changes were introduced in SGEV62u1
+### Therefore, we need to know the SGE version
+###
+
+yaimlog DEBUG "Get SGE version"
+
+SGE_VERSION=`${SGE_ROOT}/bin/lx26-x86/qstat -help | head -n 1 | cut -f2 -d ' ' | cut -f1 -d 'u'`
+SGEV62=`echo "$SGE_VERSION >= 6.2 " | bc`
+
+
+#---*---
+
+
+###
+### Create SGE dir structure for client
+###
+
 yaimlog DEBUG "Building SGE directories under ${SGE_ROOT}/${SGE_CELL}"
 
 if [ ! -d ${SGE_ROOT} ]; then
@@ -72,11 +90,11 @@ fi
 if [ "X$SGE_SPOOL_METH" == "Xclassic" ]; then
      SGE_SPOOL_LIB=libspoolc
      SGE_SPOOL_PAR="${SGE_ROOT}/${SGE_CELL}/common;${SGE_ROOT}/${SGE_CELL}/spool/qmaster"
-elif [ "X$SGE_SPOOL_METH" == "Xberkeleydb" ]; then
-     SGE_SPOOL_LIB=libspoolb
-     SGE_SPOOL_PAR="${SGE_ROOT}/${SGE_CELL}/spool/qmaster/spooldb"
+#elif [ "X$SGE_SPOOL_METH" == "Xberkeleydb" ]; then
+#     SGE_SPOOL_LIB=libspoolb
+#     SGE_SPOOL_PAR="${SGE_ROOT}/${SGE_CELL}/spool/qmaster/spooldb"
 else
-     yaimlog ABORT "Unknowned/Unspecified SGE spooling method. Check your SGE_SPOOL_METH definition."
+     yaimlog ABORT "YAIM only supports the SGE classic spooling! Check your SGE_SPOOL_METH definition."
      exit 1
 fi
 
@@ -115,6 +133,21 @@ fi
 cat <<EOF_ACT_QMASTER_FILE > ${ACT_QMASTER_FILE}
 ${BATCH_SERVER}
 EOF_ACT_QMASTER_FILE
+
+
+#---*---
+
+if [ "X${SGEV62}" == "X1" ]; then
+	CLUSTER_NAME_FILE=${SGE_ROOT}/${SGE_CELL}/common/cluster_name
+	yaimlog DEBUG "Configuring SGE ${CLUSTER_NAME_FILE} file"
+	if [ -e ${CLUSTER_NAME_FILE} ]; then
+   		OLD_CLUSTER_NAME=`cat ${CLUSTER_NAME_FILE}`
+   		yaimlog WARNING "${CLUSTER_NAME_FILE} exists! New value (p${SGE_QMASTER}) will overwrite old value (${OLD_CLUSTER_NAME})"
+	fi
+	cat <<EOF_CLUSTER_NAME_FILE > ${CLUSTER_NAME_FILE}
+p${SGE_QMASTER}
+EOF_CLUSTER_NAME_FILE
+fi 
 
 
 #---*---
@@ -167,10 +200,13 @@ EOF_SGE_CSHENV_FILE
 ###
 
 SGE_SHSETTING_FILE=${SGE_ROOT}/${SGE_CELL}/common/settings.sh
+
 yaimlog DEBUG "Check if ${SGE_SHSETTING_FILE} exists!"
+
 if [ -e ${SGE_SHSETTING_FILE} ]; then
      yaimlog WARNING "${SGE_SHSETTING_FILE} exists. It will be overwritten with your current definitions."
 fi
+
 cat <<EOF_SGE_SHSETTING_FILE > ${SGE_SHSETTING_FILE}
 #!/bin/bash
 SGE_ROOT=${SGE_ROOT}; export SGE_ROOT
@@ -178,6 +214,7 @@ ARCH=\`\$SGE_ROOT/util/arch\`
 DEFAULTMANPATH=\`\$SGE_ROOT/util/arch -m\`
 MANTYPE=\`\$SGE_ROOT/util/arch -mt\`
 SGE_CELL=${SGE_CELL}; export SGE_CELL
+SGE_CLUSTER_NAME=p${SGE_QMASTER}; export SGE_CLUSTER_NAME
 SGE_QMASTER=${SGE_QMASTER}; export SGE_QMASTER
 SGE_EXECD=${SGE_EXECD}; export SGE_EXECD
 if [ "\$MANPATH" = "" ]; then
@@ -195,8 +232,8 @@ fi
 export \$shlib_path_name
 unset ARCH DEFAULTMANPATH MANTYPE shlib_path_name
 EOF_SGE_SHSETTING_FILE
-chmod 644 ${SGE_SHSETTING_FILE}
-source ${SGE_SHENV_FILE}
+
+chmod 644 ${SGE_SHSETTING_FILE}; source ${SGE_SHENV_FILE}
 
 
 #---*---
@@ -218,11 +255,12 @@ set ARCH=\`\$SGE_ROOT/util/arch\`
 set DEFAULTMANPATH=\`\$SGE_ROOT/util/arch -m\`
 set MANTYPE=\`\$SGE_ROOT/util/arch -mt\`
 setenv SGE_CELL ${SGE_CELL}
+setenv SGE_CLUSTER_NAME p${SGE_QMASTER}
 # unsetenv SGE_QMASTER
 # unsetenv SGE_EXECD
 setenv SGE_QMASTER ${SGE_QMASTER}
 setenv SGE_EXECD ${SGE_EXECD}
-if ( \$\?MANPATH == 1 ) then
+if ( \$?MANPATH == 1 ) then
    setenv MANPATH \$SGE_ROOT/\${MANTYPE}:\$MANPATH
 else
    setenv MANPATH \$SGE_ROOT/\${MANTYPE}:\$DEFAULTMANPATH
@@ -305,5 +343,6 @@ else
 fi
 
 return 0
+
 }
 
