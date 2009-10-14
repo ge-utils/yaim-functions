@@ -146,11 +146,28 @@ fi
 
 if ( echo " ${NODE_TYPE_LIST} " | egrep -q "CE" ) && ( echo " ${NODE_TYPE_LIST} " | egrep -q 'creamCE' ); then
 
-	BLPARSER_WITH_UPDATER_NOTIFIER=true
+###
+### Check if sge scripts and BUPDATER are installed
+###
+        SGE_CREAM_BIN_DIR="/opt/glite/bin"
+        if [ ! -d $SGE_CREAM_BIN_DIR ]; then
+             yaimlog ABORT "$SGE_CREAM_BIN_DIR doesn't exist. Is CREAMCE meta-package installed? Exiting ..."
+             exit 1
+        fi
+
+        for sge_scripts in BUpdaterSGE sge_helper sge_cancel.sh sge_hold.sh \
+            sge_resume.sh sge_status.sh sge_submit.sh BNotifier; do
+            sge_file="${SGE_CREAM_BIN_DIR}/${sge_scripts}"
+            if [ ! -e ${sge_file} ]; then
+                yaimlog ABORT "${sge_file} doesn't exist. Is glite-ce-blahp rpm installed? Exiting ..."
+                exit 1
+            fi 
+        done  
 
 ###
 ### Variables setup for blahp.log
 ###
+        BLPARSER_WITH_UPDATER_NOTIFIER=true
 
         SCRIPT="/opt/glite/etc/blah.config"
 
@@ -220,7 +237,7 @@ ${blah_lrms}_binpath=$blah_bin
 # Path where the ${blah_lrms} conf file is located
 ${blah_lrms}_confpath=$blah_conf
 
-# Path where the ${blah_lrms} logs are located (for pbs \$pbs_spoolpath/server_logs)
+# Path where the ${blah_lrms} logs are located
 ${blah_lrms}_spoolpath=$blah_spool
 
 # If it is set to yes blah does not check the jobid in the logfiles
