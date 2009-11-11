@@ -29,7 +29,7 @@
 
 
 function config_gip_sge_check(){
-    requires $1 QUEUES SGE_ROOT SGE_CELL
+    requires $1 QUEUES SGE_ROOT SGE_CELL JOB_MANAGER
     return $?
 }
 
@@ -66,6 +66,41 @@ yaimlog DEBUG "Running SGE GIP configuration for gLite version $glite_version!"
 
 #---*---
 
+###
+### Check the content of JOB_MANAGER variable
+###
+
+JOB_MANAGER_SET=`echo $JOB_MANAGER | sed s/lcg// | grep sge`
+if [ "X$JOB_MANAGER_SET" != "Xsge" ]; then
+	yaimlog ABORT "JOB_MANAGER not set. IS needs to know the JOB_MANAGER content to build static ldif files"
+	yaimlog ABORT "Set it to JOB_MANAGER=lcgsge (LCG-CE) or to JOB_MANAGER=lcgsge (creamCE)"
+        exit 1 
+fi
+
+
+#*****************************************************************************************
+#***************************************** LCG-CE ****************************************
+#*****************************************************************************************
+
+if ( echo " ${NODE_TYPE_LIST} " | egrep -q "CE" ) && ( ! echo " ${NODE_TYPE_LIST} " | egrep -q 'creamCE' ); then
+	if [ "X$JOB_MANAGER" != "Xlcgsge" ]; then
+		yaimlog ABORT "JOB_MANAGER has an incorrect value. It should be lcgsge for a LCG-CE"
+		exit 1
+	fi
+fi
+
+#*****************************************************************************************
+#***************************************** CreamCE ***************************************
+#*****************************************************************************************
+if ( echo " ${NODE_TYPE_LIST} " | egrep -q "CE" ) && ( echo " ${NODE_TYPE_LIST} " | egrep -q 'creamCE' ); then
+	if [ "X$JOB_MANAGER" != "Xsge" ]; then
+        	yaimlog ABORT "JOB_MANAGER has an incorrect value. It should be sge for a creamCE"
+        	exit 1
+	fi
+fi
+
+
+#---*---
 
 ###
 ### General checks regarding Information Plugin
