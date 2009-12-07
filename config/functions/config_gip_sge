@@ -132,7 +132,7 @@ yaimlog DEBUG "Check ${SGE_INFOPROVIDER} file permissions"
 if [ -x ${SGE_INFOPROVIDER} ]; then
      yaimlog DEBUG "${SGE_INFOPROVIDER} has correct permissions"
 else
-     yaimlog WARNING "${SGE_INFOPROVIDER} does not has the correct permissions. Changing them ..."
+     yaimlog WARNING "${SGE_INFOPROVIDER} does not have the correct permissions. Changing them ..."
      chmod 755 $SGE_INFOPROVIDER
 fi
 
