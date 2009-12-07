@@ -73,7 +73,7 @@ yaimlog DEBUG "Running SGE GIP configuration for gLite version $glite_version!"
 JOB_MANAGER_SET=`echo $JOB_MANAGER | sed s/lcg// | grep sge`
 if [ "X$JOB_MANAGER_SET" != "Xsge" ]; then
 	yaimlog ABORT "JOB_MANAGER not set. IS needs to know the JOB_MANAGER content to build static ldif files"
-	yaimlog ABORT "Set it to JOB_MANAGER=lcgsge (LCG-CE) or to JOB_MANAGER=lcgsge (creamCE)"
+	yaimlog ABORT "Set it to JOB_MANAGER=lcgsge (LCG-CE) or to JOB_MANAGER=sge (creamCE)"
         exit 1 
 fi
 
