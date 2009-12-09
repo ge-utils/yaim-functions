@@ -29,7 +29,7 @@
 
 
 function config_sgesub_check(){
-    requires $1 SGE_ROOT SGE_CELL
+    requires $1 SGE_ROOT SGE_CELL SGE_SHARED_INSTALL
     return $?
 }
 
@@ -43,19 +43,27 @@ function config_sgesub(){
 
 INSTALL_ROOT=${INSTALL_ROOT:-/opt}
 
+if [ "X$SGE_SHARED_INSTALL" == "Xno" ]; then
+
 ###
 ### Setting up sge_qstat options
 ###
 
-yaimlog DEBUG "Define default sge_qstat options"
+	yaimlog DEBUG "Define default sge_qstat options"
 
-SGE_QSTAT_OPTIONS_FILE=${SGE_ROOT}/${SGE_CELL}/common/sge_qstat
-if [ -e ${SGE_QSTAT_OPTIONS_FILE} ]; then
-   rm -f ${SGE_QSTAT_OPTIONS_FILE}
-fi
-cat <<EOF_SGE_QSTAT_OPTIONS_FILE > ${SGE_QSTAT_OPTIONS_FILE}
+	SGE_QSTAT_OPTIONS_FILE=${SGE_ROOT}/${SGE_CELL}/common/sge_qstat
+	if [ -e ${SGE_QSTAT_OPTIONS_FILE} ]; then
+   	     rm -f ${SGE_QSTAT_OPTIONS_FILE}
+	fi
+	cat <<EOF_SGE_QSTAT_OPTIONS_FILE > ${SGE_QSTAT_OPTIONS_FILE}
 -u *
 EOF_SGE_QSTAT_OPTIONS_FILE
+
+else
+        yaimlog INFO "You are using a SGE SHARED INSTALLATION."
+        yaimlog INFO "SGE instalation will not be configured since we assume everything is already working via the SHARED INSTALLATION!"
+fi
+
 
 return 0
 }

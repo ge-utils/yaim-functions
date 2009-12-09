@@ -1,16 +1,14 @@
 .TH "YAIM-SGE-UTILS" 1
 .SH NAME
 The yaim-sge-utils module is a yaim plugin to configure Sun Grid Engine batch system, and to enable 
-its proper interaction with an EGEE Computing Element. At the moment, LCG-CE 3.1  and CreamCE are now 
-supported. It assumes that the SGE software and that the glite-SGE_utils meta-package are already 
-installed (see the "Generic Installation and Configuration Guide for gLite 3.1"). The last tried 
-SGE version was SGE V6.1u3.  
+its proper interaction with an EGEE Computing Element. At the moment, LCG-CE and CreamCE are supported. 
+It assumes that the SGE software and that the glite-SGE_utils meta-package are already installed (see 
+the "Generic Installation and Configuration Guide for gLite 3.1").
 
 
 .SH DESCRIPTION
 The yaim-sge-utils module allows you to configure the Computing Element to properly interact
-with the SGE Qmaster Server which can be running in the same machine as the Computing Element
-or in a different machine.
+with the SGE Qmaster Server which should be running in a different machine.
 
 
 .SH CONFIGURATION VARIABLES
@@ -53,7 +51,11 @@ SGE_QMASTER : SGE Qmaster port. Default is 536
 .TP
 SGE_EXECD : SGE execd port. Default is 537
 .TP
-SGE_SPOOL_METH : SGE spooling method. Default is classic
+SGE_SPOOL_METH : SGE spooling method. Only classic is supported
+.TP
+SGE_SHARED_INSTALL : Set this variable to yes if you are using a SHARED SGE INSTALLATION. In this case, 
+SGE will not be configured. Default is no. 
+
 
 .SH EXAMPLES
 How to configure the SGE_utils node.

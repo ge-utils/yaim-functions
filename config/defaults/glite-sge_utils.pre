@@ -14,4 +14,6 @@ SGE_QMASTER=536
 SGE_EXECD=537
 # SGE spooling method (available methods are berkeleydb and classic)
 SGE_SPOOL_METH=classic
+# SGE SHARED INSTALATION DIR
+SGE_SHARED_INSTALL=no
 
