@@ -329,6 +329,14 @@ bnotifier_debug_level=2
 bnotifier_debug_logfile=${GLITE_LOCATION_VAR}/log/glite-ce-bnotifier.log
 
 blah_children_restart_interval=0
+
+# Following email from M. Sgaravatto 
+# Subject: Changes needed in blah.config for CREAM CE v. 1.6
+# Date: 21/12/2009 
+blah_disable_proxy_user_copy=yes
+blah_id_mapping_command_sudo="/usr/bin/sudo -H"
+blah_set_default_workdir_to_home=yes 
+
 EOF
 	fi
 
