@@ -409,8 +409,6 @@ EOF
     		mv -f `find /etc -name logrotate` /etc/cron.hourly/
   	fi
 
-fi
-
 
 #---*---
 
@@ -419,27 +417,29 @@ fi
 ### Check content of /opt/glite/etc/lcas/lcas-suexec.db
 ###
 
-LCAS_SUEXEC_DB="${GLITE_LOCATION}/etc/lcas/lcas-suexec.db"
-moddir="/opt/glite/lib64/modules"
-my_batch_sys="sge"
+	LCAS_SUEXEC_DB="${GLITE_LOCATION}/etc/lcas/lcas-suexec.db"
+	moddir="/opt/glite/lib64/modules"
+	my_batch_sys="sge"
 
-for sge_blah_script in ${my_batch_sys}_status.sh ${my_batch_sys}_cancel.sh \
+	for sge_blah_script in ${my_batch_sys}_status.sh ${my_batch_sys}_cancel.sh \
             ${my_batch_sys}_hold.sh ${my_batch_sys}_resume.sh ${my_batch_sys}_submit.sh; do 
-        LCAS_SUEXEC_DB_EMPTY=`cat $LCAS_SUEXEC_DB | grep "${GLITE_LOCATION}/bin/$sge_blah_script"`
-        if [ "X$LCAS_SUEXEC_DB_EMPTY" == "X" ]; then
-             break
-        fi
-done
+        	LCAS_SUEXEC_DB_EMPTY=`cat $LCAS_SUEXEC_DB | grep "${GLITE_LOCATION}/bin/$sge_blah_script"`
+        	if [ "X$LCAS_SUEXEC_DB_EMPTY" == "X" ]; then
+             		break
+        	fi
+	done
 
-if [ "X$LCAS_SUEXEC_DB_EMPTY" == "X" ]; then
-        if [ -f $LCAS_SUEXEC_DB ]; then
-                cp $LCAS_SUEXEC_DB $LCAS_SUEXEC_DB.old
-        fi
+	if [ "X$LCAS_SUEXEC_DB_EMPTY" == "X" ]; then
+        	if [ -f $LCAS_SUEXEC_DB ]; then
+                	cp $LCAS_SUEXEC_DB $LCAS_SUEXEC_DB.old
+        	fi
 
-        cat << EOF > $LCAS_SUEXEC_DB
+        	cat << EOF > $LCAS_SUEXEC_DB
 pluginname=${moddir}/lcas_voms.mod,pluginargs="-vomsdir /etc/grid-security/vomsdir/ -certdir /etc/grid-security/certificates -authfile ${GRIDMAPFILE} -authformat simple -use_user_dn"
 pluginname=${moddir}/lcas_check_executable.mod,pluginargs="-exec /bin/pwd:/bin/echo:/usr/bin/readlink:/bin/kill:${GLITE_LOCATION}/bin/BPRclient:/bin/rm:/bin/cp:/usr/bin/id:/bin/cat:/usr/bin/groups:/usr/bin/whoami:${GLITE_LOCATION}/etc/glite-ce-cream/cream-glexec.sh:${GLITE_LOCATION}/bin/blah_job_registry_lkup:${GLITE_LOCATION}/bin/${my_batch_sys}_submit.sh:${GLITE_LOCATION}/bin/${my_batch_sys}_status.sh:${GLITE_LOCATION}/bin/${my_batch_sys}_cancel.sh:${GLITE_LOCATION}/bin/${my_batch_sys}_hold.sh:${GLITE_LOCATION}/bin/${my_batch_sys}_resume.sh:${GLITE_LOCATION}/bin/glite-cream-createsandboxdir"
 EOF
+	fi
+
 fi
 
 return 0
