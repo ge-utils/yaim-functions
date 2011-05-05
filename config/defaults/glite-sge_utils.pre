@@ -12,6 +12,8 @@ SGE_CELL=default
 SGE_QMASTER=536
 # Port used to contact SGE EXECD 
 SGE_EXECD=537
+# Cluster Name default
+SGE_CLUSTER_NAME=p536
 # SGE spooling method (available methods are berkeleydb and classic)
 SGE_SPOOL_METH=classic
 # SGE SHARED INSTALATION DIR

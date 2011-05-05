@@ -245,7 +245,7 @@ if [ -e ${CE_PLUGIN_FILE} ]; then
 fi 
 cat <<EOF_CE_PLUGIN_FILE > ${CE_PLUGIN_FILE}
 #!/bin/sh
-/opt/lcg/libexec/lcg-info-dynamic-scheduler -c /opt/glite/etc/lcg-info-dynamic-scheduler.conf
+/opt/glite/libexec/sge_helper --info -c /opt/glite/etc/lcg-info-dynamic-scheduler.conf
 EOF_CE_PLUGIN_FILE
 
 yaimlog DEBUG "Set proper permissions to ${CE_PLUGIN_FILE}"
@@ -268,7 +268,7 @@ if [ -e ${CE_SCHEDULER_WRAPPER_FILE} ]; then
 fi
 cat <<EOF_CE_SCHEDULER_WRAPPER_FILE > ${CE_SCHEDULER_WRAPPER_FILE}
 #!/bin/sh
-/opt/glite/libexec/sge_helper --info -c /opt/glite/etc/lcg-info-dynamic-scheduler.conf
+/opt/lcg/libexec/lcg-info-dynamic-scheduler -c /opt/glite/etc/lcg-info-dynamic-scheduler.conf
 EOF_CE_SCHEDULER_WRAPPER_FILE
 
 yaimlog DEBUG "Set proper permissions to ${CE_SCHEDULER_WRAPPER_FILE}"

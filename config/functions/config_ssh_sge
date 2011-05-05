@@ -134,11 +134,6 @@ use strict ;
 use Fcntl;
 use Socket;
 ####################################################
-# This collects a list of nodes from pbsnodes
-# and ssh-keyscans them adding them to a known hosts file
-# if they are new.
-
-
 my \$configfile = '${SGE_KNOWNHOST_SCRIPT_CONF}' ;
 
 my \$specified ;  # Nodes that have specified manually.
@@ -170,8 +165,9 @@ if ( -f \$knownhosts ) {
   open(KNOWN,"<\$knownhosts") || die "Could not open \$knownhosts\n" ;
   while(<KNOWN>) {
       chomp;
-      \$known{\$1} = "true" if(/^([^,\s]+)[,\s]/)  ;
-      (\$host,\$type,\$key) = (\$_ =~ /^([^,\s]+)[,\s]([^,\s]+)[,\s](.+)\$/) ;
+      \$known{\$1} = "true" if(/^([^,\s]+)[,\s]/);
+      #(\$host,\$type,\$key) = (\$_ =~ /^([^,\s]+)[,\s]([^,\s]+)[,\s](.+)\$/) ;
+      (\$host,\$type,\$key) = (\$_ =~ /^([^,\s]+,*[^,\s]*,*[^,\s]*)[,\s]([^,\s]+)[,\s](.+)\$/);
       next if ( ! defined \$host || ! defined \$type || ! defined \$key );
       \$keys{\$host,\$type} = \$key ;
   }
@@ -254,7 +250,7 @@ foreach(@new) {
   \$packedaddress = inet_aton(\$_) ;
   if (\$packedaddress) {
     \$ip =   inet_ntoa(\$packedaddress) ;
-    \$cmd = "/usr/bin/ssh-keyscan -t \$types \$_ \$ip 2>/dev/null" ;
+    \$cmd = "/usr/bin/ssh-keyscan -T 1 -t \$types \$_ \$ip 2>/dev/null" ;
     \$key = '';
     open(SCAN,"\$cmd|") || die \$! ;
     while(<SCAN>) {

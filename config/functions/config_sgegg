@@ -270,10 +270,9 @@ ${blah_lrms}_BLPport1=$blah_blp_port1
 ${blah_lrms}_BLPserver2=$blah_blp_server2
 ${blah_lrms}_BLPport2=$blah_blp_port2
 
-sge_root="$SGE_ROOT"
-sge_cell="$SGE_CELL"
-sge_helper=/opt/glite/bin/sge_helper
-
+${blah_lrms}_rootpath=$SGE_ROOT
+${blah_lrms}_cellname=$SGE_CELL
+${blah_lrms}_helperpath=/opt/glite/bin/sge_helper
 EOF
 
 
