@@ -41,8 +41,6 @@ function config_sgeenv_setenv(){
 
 function config_sgeenv(){
 
-INSTALL_ROOT=${INSTALL_ROOT:-/opt}
-
 if [ "X$SGE_SHARED_INSTALL" == "Xno" ]; then
 
 ###
@@ -266,8 +264,12 @@ EOF_SGE_CSHENV_FILE
 
 	PORT1=`grep "[^0-9]${SGE_QMASTER}/tcp" ${SERVICES_FILE} | grep -v sge` 
 	if [ "X${PORT1}" != "X" ]; then
-             yaimlog ABORT "Port ${SGE_QMASTER}/tcp is already used by other service. Check ${SERVICES_FILE}"
-     	     exit 1
+	    yaimlog WARNING "Port ${SGE_QMASTER}/tcp is already defined by other service. ${SERVICES_FILE} will be replaced, old file ${SERVICES_FILE}.old"
+	    if [ ! -e ${SERVICES_FILE}.old ]; then
+		cp ${SERVICES_FILE} ${SERVICES_FILE}.old
+	    fi
+	    SERV=`grep "\b${PORT1}/tcp\b" services | awk '{print $1}'`
+	    sed -i "s/${SERV}/sge_qmaster/g" ${SERVICES_FILE}
 	fi
 	VAR1=`grep ^sge_qmaster ${SERVICES_FILE} | awk '{print $2}'`
 	if [ "X${VAR1}" == "X" ]; then
@@ -284,8 +286,13 @@ EOF_SGE_CSHENV_FILE
 
 	PORT2=`grep "[^0-9]${SGE_EXECD}/tcp" ${SERVICES_FILE} | grep -v sge` 
 	if [ "X${PORT2}" != "X" ]; then
-             yaimlog ABORT "Port ${SGE_EXECD}/tcp is already used by other service. Check ${SERVICES_FILE}"
-     	     exit 1
+	    yaimlog WARNING "Port ${SGE_EXECD}/tcp is already defined by other service. ${SERVICES_FILE} will be replaced, old file ${SERVICES_FILE}.old"
+	    if [ ! -e ${SERVICES_FILE}.old ]; then
+		cp ${SERVICES_FILE} ${SERVICES_FILE}.old
+	    fi
+	    cp ${SERVICES_FILE} ${SERVICES_FILE}.old
+	    SERV=`grep "\b${PORT2}/tcp\b" services | awk '{print $1}'`
+	    sed -i "s/${SERV}/sge_qmaster/g" ${SERVICES_FILE}
 	fi
 	VAR2=`grep ^sge_execd ${SERVICES_FILE} | awk '{print $2}'`
 	if [ "X${VAR2}" == "X" ]; then
@@ -372,4 +379,3 @@ fi
 return 0
 
 }
-

@@ -44,14 +44,14 @@ function config_ssh_sge_setenv(){
 function config_ssh_sge(){
 
 # This directories are not created by default in CreamCE
-if [ ! -d /opt/edg/sbin ]; then
-     mkdir -p /opt/edg/sbin
-fi
-
-if [ ! -d /opt/edg/etc ]; then
-     mkdir -p /opt/edg/etc
-fi
-
+# if [ ! -d /opt/edg/sbin ]; then
+#      mkdir -p /opt/edg/sbin
+# fi
+# 
+# if [ ! -d /opt/edg/etc ]; then
+#      mkdir -p /opt/edg/etc
+# fi
+#
 #---*---
 
 SHOSTS_FILE="/etc/ssh/shosts.equiv"
@@ -79,7 +79,8 @@ fi
 
 #---*---
 
-SGE_KNOWNHOST_SCRIPT_CONF="/opt/edg/etc/edg-sge-knownhosts.conf"
+#SGE_KNOWNHOST_SCRIPT_CONF="/opt/edg/etc/edg-sge-knownhosts.conf"
+SGE_KNOWNHOST_SCRIPT_CONF="/etc/edg-sge-knownhosts.conf"
 yaimlog DEBUG "Building $SGE_KNOWNHOST_SCRIPT configuration file"
 
 if [ -e ${SGE_KNOWNHOST_SCRIPT_CONF} ]; then
@@ -114,7 +115,8 @@ chmod 644  ${SGE_KNOWNHOST_SCRIPT_CONF}
 
 # ---*---
 
-SGE_KNOWNHOST_SCRIPT=/opt/edg/sbin/edg-sge-knownhosts
+#SGE_KNOWNHOST_SCRIPT=/opt/edg/sbin/edg-sge-knownhosts
+SGE_KNOWNHOST_SCRIPT=/usr/sbin/edg-sge-knownhosts
 yaimlog DEBUG "Building $SGE_KNOWNHOST_SCRIPT perl script"
 
 if [ -e ${SGE_KNOWNHOST_SCRIPT} ]; then
