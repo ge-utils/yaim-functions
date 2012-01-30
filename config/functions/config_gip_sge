@@ -17,11 +17,11 @@
 #
 # NAME        : config_gip_sge
 #
-# DESCRIPTION : Configures the SGE information provider for lcg-CE 3.1
+# DESCRIPTION : Configures the SGE information provider for lcg-CE / CreamCE
 #
 # AUTHORS     : goncalo@lip.pt
 #
-# NOTES       : - Tested in SGE V60u7_1, V61u3
+# NOTES       : Tested in SGE V60u7_1, V61u3, V62u5
 #
 # YAIM MODULE : glite-yaim-sge-utils
 #
