@@ -132,10 +132,12 @@ fi
 
 
 ###
-### Build /etc/sge-jobmanager/vqueues
+### Build /etc/lrms/vqueues
 ###
 
-SGE_INFOPROVIDER_DIR=/etc/sge-jobmanager
+SGE_INFOPROVIDER_DIR=/etc/lrms
+SGE_INFOPROVIDER_TMP=/tmp/sge/etc/lrms
+
 SGE_INFOPROVIDER_VQUEUES=${SGE_INFOPROVIDER_DIR}/vqueues.conf
 if [ ! -d ${SGE_INFOPROVIDER_DIR} ]; then
    mkdir ${SGE_INFOPROVIDER_DIR}
@@ -144,11 +146,11 @@ fi
 yaimlog DEBUG "Creating ${SGE_INFOPROVIDER_VQUEUES} file..."
 
 if [ -e ${SGE_INFOPROVIDER_VQUEUES} ]; then
-   yaimlog WARNING "${SGE_INFOPROVIDER_VQUEUES} exists. It will not be changed!. A recommended configuration will be created under /tmp/sge/etc/sge-jobmanager/vqueues.conf. You can copy it manually!"
-   SGE_INFOPROVIDER_VQUEUES="/tmp/sge/etc/sge-jobmanager/vqueues.conf"
-   if [ ! -d /tmp/sge/etc/sge-jobmanager ]; then
-        mkdir -p /tmp/sge/etc/sge-jobmanager
-        chmod 700 /tmp/sge/etc/sge-jobmanager
+   yaimlog WARNING "${SGE_INFOPROVIDER_VQUEUES} exists. It will not be changed!. A recommended configuration will be created under ${SGE_INFOPROVIDER_TMP}/vqueues.conf. You can copy it manually!"
+   SGE_INFOPROVIDER_VQUEUES="${SGE_INFOPROVIDER_TMP}/vqueues.conf"
+   if [ ! -d ${SGE_INFOPROVIDER_TMP} ]; then
+        mkdir -p ${SGE_INFOPROVIDER_TMP}
+        chmod 700 ${SGE_INFOPROVIDER_TMP}
    fi       
 fi
 
@@ -169,46 +171,10 @@ done
 
 chmod 644 ${SGE_INFOPROVIDER_VQUEUES}
 
-
 #---*---
 
-
 ###
-### Build info-reporter.conf file
-###
-
-SGE_INFOPROVIDER_REPORTER=${SGE_INFOPROVIDER_DIR}/info-reporter.conf
-
-yaimlog DEBUG "Creating $SGE_INFOPROVIDER_REPORTER file..."
-
-if [ -e ${SGE_INFOPROVIDER_REPORTER} ]; then
-   yaimlog WARNING "${SGE_INFOPROVIDER_REPORTER} exists. It will not be changed!. A recommended configuration will be created under /tmp/sge/etc/sge-jobmanager/info-reporter.conf. You can copy it manually!"
-   SGE_INFOPROVIDER_REPORTER="/tmp/sge/etc/sge-jobmanager/info-reporter.conf"
-fi
-
-cat <<EOF_SGE_INFOPROVIDER_REPORTER > ${SGE_INFOPROVIDER_REPORTER}
-#
-# Sample configuration file for SGE information reporter
-# ======================================================
-SGE_ROOT = $SGE_ROOT
-SGE_ARCH = `$SGE_ROOT/util/arch`
-SGE_CELL = $SGE_CELL
-#ldif_file = $INSTALL_ROOT/glite/etc/gip/ldif/static-file-CE.ldif
-ldif_file = /var/lib/bdii/gip/ldif/static-file-CE.ldif
-vqueue_file = /etc/sge-jobmanager/vqueues.conf
-state_file = /etc/sge-jobmanager/cluster.state
-qstat_command = $SGE_ROOT/bin/`$SGE_ROOT/util/arch`/qstat
-qconf_command = $SGE_ROOT/bin/`$SGE_ROOT/util/arch`/qconf
-EOF_SGE_INFOPROVIDER_REPORTER
-
-chown 644 ${SGE_INFOPROVIDER_REPORTER}
-
-
-#---*---
-
-
-###
-### Build info-reporter.conf file
+### Build /etc/lrms/cluster.state file
 ###
 
 SGE_INFOPROVIDER_CLUSTER=${SGE_INFOPROVIDER_DIR}/cluster.state
@@ -222,15 +188,48 @@ EOF_SGE_INFOPROVIDER_CLUSTER
 
 chown 644 ${SGE_INFOPROVIDER_CLUSTER}
 
-
 #---*---
 
 
 ###
-### Set /opt/glite/etc/gip/plugin/glite-info-dynamic-ce
+### Build /etc/lrms/sge.conf file
 ###
 
-#CE_PLUGIN_FILE=${INSTALL_ROOT}/glite/etc/gip/plugin/glite-info-dynamic-ce
+SGE_INFOPROVIDER_REPORTER=${SGE_INFOPROVIDER_DIR}/sge.conf
+
+yaimlog DEBUG "Creating $SGE_INFOPROVIDER_REPORTER file..."
+
+if [ -e ${SGE_INFOPROVIDER_REPORTER} ]; then
+   yaimlog WARNING "${SGE_INFOPROVIDER_REPORTER} exists. It will not be changed!. A recommended configuration will be created under ${SGE_INFOPROVIDER_TMP}/sge.conf. You can copy it manually!"
+   SGE_INFOPROVIDER_REPORTER="${SGE_INFOPROVIDER_TMP}/sge.conf"
+fi
+
+cat <<EOF_SGE_INFOPROVIDER_REPORTER > ${SGE_INFOPROVIDER_REPORTER}
+#
+# Sample configuration file for SGE information reporter
+# ======================================================
+SGE_ROOT = ${SGE_ROOT}
+SGE_ARCH = `${SGE_ROOT}/util/arch`
+SGE_CELL = ${SGE_CELL}
+vqueue_file = ${SGE_INFOPROVIDER_VQUEUES}
+state_file = ${SGE_INFOPROVIDER_CLUSTER}
+qstat_command = $SGE_ROOT/bin/`$SGE_ROOT/util/arch`/qstat
+qconf_command = $SGE_ROOT/bin/`$SGE_ROOT/util/arch`/qconf
+# GLUE static info 
+glue1-static-file-CE                = /var/lib/bdii/gip/ldif/static-file-CE.ldif
+glue2-static-file-computing-manager = /var/lib/bdii/gip/ldif/ComputingManager.ldif
+glue2-static-file-computing-share   = /var/lib/bdii/gip/ldif/ComputingShare.ldif
+outputformat                        = glue1,glue2
+EOF_SGE_INFOPROVIDER_REPORTER
+
+chown 644 ${SGE_INFOPROVIDER_REPORTER}
+
+#---*---
+
+###
+### Set /var/lib/bdii/gip/plugin/glite-info-dynamic-ce
+###
+
 CE_PLUGIN_FILE=/var/lib/bdii/gip/plugin/glite-info-dynamic-ce
 
 yaimlog DEBUG "Configure SGE dynamic information plugin: ${CE_PLUGIN_FILE}"
@@ -240,7 +239,6 @@ if [ -e ${CE_PLUGIN_FILE} ]; then
 fi 
 cat <<EOF_CE_PLUGIN_FILE > ${CE_PLUGIN_FILE}
 #!/bin/sh
-#/opt/glite/libexec/sge_helper --info -c /opt/glite/etc/lcg-info-dynamic-scheduler.conf
 /usr/libexec/glite-info-dynamic-sge --info -c /etc/lcg-info-dynamic-scheduler.conf
 EOF_CE_PLUGIN_FILE
 
@@ -252,33 +250,9 @@ chmod 755 ${CE_PLUGIN_FILE}
 
 
 ###
-### Set /opt/glite/etc/gip/plugin/glite-info-dynamic-scheduler-wrapper
+### SGE Configure /etc/lcg-info-dynamic-scheduler.conf
 ###
 
-CE_SCHEDULER_WRAPPER_FILE=/var/lib/bdii/gip/plugin/glite-info-dynamic-scheduler-wrapper
-yaimlog DEBUG "Configure SGE dynamic scheduler wrapper plugin: ${CE_SCHEDULER_WRAPPER_FILE}"
-
-if [ -e ${CE_SCHEDULER_WRAPPER_FILE} ]; then
-   rm -f ${CE_SCHEDULER_WRAPPER_FILE}
-fi
-cat <<EOF_CE_SCHEDULER_WRAPPER_FILE > ${CE_SCHEDULER_WRAPPER_FILE}
-#!/bin/sh
-#/opt/lcg/libexec/lcg-info-dynamic-scheduler -c /opt/glite/etc/lcg-info-dynamic-scheduler.conf
-/usr/libexec/lcg-info-dynamic-scheduler -c /etc/lcg-info-dynamic-scheduler.conf
-EOF_CE_SCHEDULER_WRAPPER_FILE
-
-yaimlog DEBUG "Set proper permissions to ${CE_SCHEDULER_WRAPPER_FILE}"
-chmod 755 ${CE_SCHEDULER_WRAPPER_FILE}
-
-
-#---*---
-
-
-###
-### SGE Configure /opt/glite/etc/lcg-info-dynamic-scheduler.conf
-###
-
-#CONF_FILE="/opt/glite/etc/lcg-info-dynamic-scheduler.conf"
 CONF_FILE="/etc/lcg-info-dynamic-scheduler.conf"
 if [ ! -e ${CONF_FILE} ]; then
      yaimlog ABORT " The ${CONF_FILE} does not exist. Aborting..."
