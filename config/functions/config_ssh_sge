@@ -21,7 +21,7 @@
 #               being able to query/interact with the SGE QMASTER host (which may 
 #               be working in a different machine)
 #
-# AUTHORS     : goncalo@lip.pt
+# AUTHORS     : goncalo@lip.pt,ge-support@listas.cesga.es
 #
 # NOTES       : 
 #
