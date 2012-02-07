@@ -21,7 +21,7 @@
 #
 # AUTHORS     : goncalo@lip.pt
 #
-# NOTES       : Tested in SGE V60u7_1, V61u3, V62u5
+# NOTES       :
 #
 # YAIM MODULE : glite-yaim-sge-utils
 #
@@ -56,7 +56,9 @@ fi
 
 yaimlog DEBUG "Running SGE Grid Gateway configuration for gLite version $emi_version!"
 
+
 #---*---
+
 
 ###
 ### Check the content of JOB_MANAGER variable
@@ -64,7 +66,7 @@ yaimlog DEBUG "Running SGE Grid Gateway configuration for gLite version $emi_ver
 
 JOB_MANAGER_SET=`echo $JOB_MANAGER | sed s/lcg// | grep sge`
 if [ "X$JOB_MANAGER_SET" != "Xsge" ]; then
-	yaimlog ABORT "JOB_MANAGER not set. IS needs to know the JOB_MANAGER content to build static ldif files"
+	yaimlog ABORT "JOB_MANAGER not set. It needs to know the JOB_MANAGER content to build static ldif files"
 	yaimlog ABORT "Set it to JOB_MANAGER=lcgsge (LCG-CE) or to JOB_MANAGER=sge (creamCE)"
         exit 1 
 fi
@@ -91,7 +93,37 @@ if ( echo " ${NODE_TYPE_LIST} " | egrep -q "CE" ) && ( echo " ${NODE_TYPE_LIST} 
 	fi
 fi
 
+
 #---*---
+
+###
+### Some General definitions
+###
+
+SGE_INFOPROVIDER_DIR=/etc/lrms
+SGE_INFOPROVIDER_DIRTMP=/tmp/sge/etc/lrms
+SGE_INFOPROVIDER_VQUEUES=${SGE_INFOPROVIDER_DIR}/vqueues.conf
+SGE_INFOPROVIDER_CLUSTER=${SGE_INFOPROVIDER_DIR}/cluster.state
+SGE_INFOPROVIDER_REPORTER=${SGE_INFOPROVIDER_DIR}/sge.conf
+
+GLITE_CREAM_LOCATION_GIP=/var/lib/bdii/gip
+GLITE_CREAM_LIBEXEC=/usr/libexec
+
+CE_PLUGIN_FILE=${GLITE_CREAM_LOCATION_GIP}/plugin/glite-info-dynamic-ce
+PLUGIN=${GLITE_CREAM_LIBEXEC}/glite-info-dynamic-sge
+CONF_FILE=${SGE_INFOPROVIDER_DIR}/scheduler.conf
+
+if [ ! -d ${SGE_INFOPROVIDER_DIR} ]; then
+   mkdir ${SGE_INFOPROVIDER_DIR}
+fi
+
+if [ ! -d ${SGE_INFOPROVIDER_DIRTMP} ]; then
+     mkdir -p ${SGE_INFOPROVIDER_DIRTMP}
+     chmod 700 ${SGE_INFOPROVIDER_DIRTMP}
+fi
+
+#---*---
+
 
 ###
 ### General checks regarding Information Plugin
@@ -99,12 +131,7 @@ fi
 
 yaimlog INFO "Build InfoProvider based on LeSC implementation"
 
-SGE_OLD_INFOPROVIDER=/usr/libexec/lcg-info-dynamic-sge
-SGE_INFOPROVIDER=/usr/libexec/glite-info-dynamic-sge
-
-if [ -e ${SGE_OLD_INFOPROVIDER} ]; then
-     yaimlog WARNING "A new implementation of SGE InfoProvider is available. ${SGE_OLD_INFOPROVIDER} will not be used anymore."
-fi
+SGE_INFOPROVIDER=${GLITE_CREAM_LIBEXEC}/glite-info-dynamic-sge
 
 if [ ! -e ${SGE_INFOPROVIDER} ]; then
    yaimlog ABORT "SGE InfoProvider is not installed !!! Without it the information system will not work ! Exiting ... "
@@ -120,6 +147,7 @@ if [ -e ${SGE_INFOPROVIDER}.rpmsave ]; then
 fi
 
 yaimlog DEBUG "Check ${SGE_INFOPROVIDER} file permissions"
+
 if [ -x ${SGE_INFOPROVIDER} ]; then
      yaimlog DEBUG "${SGE_INFOPROVIDER} has correct permissions"
 else
@@ -132,26 +160,14 @@ fi
 
 
 ###
-### Build /etc/lrms/vqueues
+### Build /etc/lrms/vqueues.conf
 ###
-
-SGE_INFOPROVIDER_DIR=/etc/lrms
-SGE_INFOPROVIDER_TMP=/tmp/sge/etc/lrms
-
-SGE_INFOPROVIDER_VQUEUES=${SGE_INFOPROVIDER_DIR}/vqueues.conf
-if [ ! -d ${SGE_INFOPROVIDER_DIR} ]; then
-   mkdir ${SGE_INFOPROVIDER_DIR}
-fi 
 
 yaimlog DEBUG "Creating ${SGE_INFOPROVIDER_VQUEUES} file..."
 
 if [ -e ${SGE_INFOPROVIDER_VQUEUES} ]; then
-   yaimlog WARNING "${SGE_INFOPROVIDER_VQUEUES} exists. It will not be changed!. A recommended configuration will be created under ${SGE_INFOPROVIDER_TMP}/vqueues.conf. You can copy it manually!"
-   SGE_INFOPROVIDER_VQUEUES="${SGE_INFOPROVIDER_TMP}/vqueues.conf"
-   if [ ! -d ${SGE_INFOPROVIDER_TMP} ]; then
-        mkdir -p ${SGE_INFOPROVIDER_TMP}
-        chmod 700 ${SGE_INFOPROVIDER_TMP}
-   fi       
+   yaimlog WARNING "${SGE_INFOPROVIDER_VQUEUES} exists and will be copied to ${SGE_INFOPROVIDER_DIRTMP}/vqueues.conf!"
+   cp -f ${SGE_INFOPROVIDER_VQUEUES} ${SGE_INFOPROVIDER_DIRTMP}/
 fi
 
 cat <<EOF_SGE_INFOPROVIDER_VQUEUES > ${SGE_INFOPROVIDER_VQUEUES}
@@ -171,22 +187,26 @@ done
 
 chmod 644 ${SGE_INFOPROVIDER_VQUEUES}
 
+
 #---*---
+
 
 ###
 ### Build /etc/lrms/cluster.state file
 ###
 
-SGE_INFOPROVIDER_CLUSTER=${SGE_INFOPROVIDER_DIR}/cluster.state
-
 yaimlog DEBUG "Set Cluster status to Production in $SGE_INFOPROVIDER_CLUSTER"
 
-rm -f $SGE_INFOPROVIDER_CLUSTER
+if [ -e ${SGE_INFOPROVIDER_CLUSTER} ]; then
+   yaimlog WARNING "${SGE_INFOPROVIDER_CLUSTER} exists and will be copied to ${SGE_INFOPROVIDER_DIRTMP}/cluster.state!"
+   cp -f ${SGE_INFOPROVIDER_CLUSTER} ${SGE_INFOPROVIDER_DIRTMP}/
+fi
+
 cat <<EOF_SGE_INFOPROVIDER_CLUSTER > ${SGE_INFOPROVIDER_CLUSTER}
 Production
 EOF_SGE_INFOPROVIDER_CLUSTER
 
-chown 644 ${SGE_INFOPROVIDER_CLUSTER}
+chmod 644 ${SGE_INFOPROVIDER_CLUSTER}
 
 #---*---
 
@@ -195,13 +215,17 @@ chown 644 ${SGE_INFOPROVIDER_CLUSTER}
 ### Build /etc/lrms/sge.conf file
 ###
 
-SGE_INFOPROVIDER_REPORTER=${SGE_INFOPROVIDER_DIR}/sge.conf
-
 yaimlog DEBUG "Creating $SGE_INFOPROVIDER_REPORTER file..."
 
+if [ "x${CREAM_CLUSTER_MODE}" = "xyes" ]; then
+  glueformat="glue1"
+else
+  glueformat="both"
+fi
+
 if [ -e ${SGE_INFOPROVIDER_REPORTER} ]; then
-   yaimlog WARNING "${SGE_INFOPROVIDER_REPORTER} exists. It will not be changed!. A recommended configuration will be created under ${SGE_INFOPROVIDER_TMP}/sge.conf. You can copy it manually!"
-   SGE_INFOPROVIDER_REPORTER="${SGE_INFOPROVIDER_TMP}/sge.conf"
+   yaimlog WARNING "${SGE_INFOPROVIDER_REPORTER} exists and will be copied to ${SGE_INFOPROVIDER_DIRTMP}/sge.conf!"
+   cp -f ${SGE_INFOPROVIDER_REPORTER} ${SGE_INFOPROVIDER_DIRTMP}/
 fi
 
 cat <<EOF_SGE_INFOPROVIDER_REPORTER > ${SGE_INFOPROVIDER_REPORTER}
@@ -215,87 +239,68 @@ vqueue_file = ${SGE_INFOPROVIDER_VQUEUES}
 state_file = ${SGE_INFOPROVIDER_CLUSTER}
 qstat_command = $SGE_ROOT/bin/`$SGE_ROOT/util/arch`/qstat
 qconf_command = $SGE_ROOT/bin/`$SGE_ROOT/util/arch`/qconf
-# GLUE static info 
-glue1-static-file-CE                = /var/lib/bdii/gip/ldif/static-file-CE.ldif
-glue2-static-file-computing-manager = /var/lib/bdii/gip/ldif/ComputingManager.ldif
-glue2-static-file-computing-share   = /var/lib/bdii/gip/ldif/ComputingShare.ldif
-outputformat                        = glue1,glue2
+glue1-static-file-CE                = ${GLITE_CREAM_LOCATION_GIP}/ldif/static-file-CE.ldif
+glue2-static-file-computing-manager = ${GLITE_CREAM_LOCATION_GIP}/ldif/ComputingManager.ldif
+glue2-static-file-computing-share   = ${GLITE_CREAM_LOCATION_GIP}/ldif/ComputingShare.ldif
+outputformat                        = ${glueformat}
 EOF_SGE_INFOPROVIDER_REPORTER
 
-chown 644 ${SGE_INFOPROVIDER_REPORTER}
+chmod 644 ${SGE_INFOPROVIDER_REPORTER}
+
 
 #---*---
+
 
 ###
 ### Set /var/lib/bdii/gip/plugin/glite-info-dynamic-ce
 ###
 
-CE_PLUGIN_FILE=/var/lib/bdii/gip/plugin/glite-info-dynamic-ce
-
 yaimlog DEBUG "Configure SGE dynamic information plugin: ${CE_PLUGIN_FILE}"
 
-if [ -e ${CE_PLUGIN_FILE} ]; then
-   rm -f ${CE_PLUGIN_FILE}
-fi 
 cat <<EOF_CE_PLUGIN_FILE > ${CE_PLUGIN_FILE}
 #!/bin/sh
-/usr/libexec/glite-info-dynamic-sge --info -c /etc/lcg-info-dynamic-scheduler.conf
+${GLITE_CREAM_LIBEXEC}/glite-ce-check-submission-state /etc/glite-ce-dbtool/creamdb_min_access.conf
+retcode=\$?
+if [ \$retcode = 1 ] || [ \$retcode = 2 ] ; then
+  # Submissions disabled. Publish Draining
+  $PLUGIN --info -c $CONF_FILE | sed -e 's/GlueCEStateStatus: Production/GlueCEStateStatus: Draining/'
+else 
+  # Submissions enabled. The default cluster.state will be used
+  $PLUGIN --info -c $CONF_FILE
+fi
 EOF_CE_PLUGIN_FILE
 
 yaimlog DEBUG "Set proper permissions to ${CE_PLUGIN_FILE}"
-chmod 755 ${CE_PLUGIN_FILE}
+chmod +x ${CE_PLUGIN_FILE}
 
 
 #---*---
 
 
 ###
-### SGE Configure /etc/lcg-info-dynamic-scheduler.conf
+### SGE Configure /etc/lrms/scheduler.conf
 ###
-
-CONF_FILE="/etc/lcg-info-dynamic-scheduler.conf"
 if [ ! -e ${CONF_FILE} ]; then
      yaimlog ABORT " The ${CONF_FILE} does not exist. Aborting..."
      exit 1
 fi
 
-LRMS_SECTION=`grep LRMS $CONF_FILE`
-if [ "X${LRMS_SECTION}" != "X[LRMS]" ]; then
-     yaimlog INFO "Adding [LRMS] section to ${CONF_FILE}"
-     echo "[LRMS]" >> ${CONF_FILE}
+if [ -e ${CONF_FILE} ]; then
+   yaimlog WARNING "${CONF_FILE} exists and will be copied to ${SGE_INFOPROVIDER_DIRTMP}/scheduler.conf!"
+   cp -f ${CONF_FILE} ${SGE_INFOPROVIDER_DIRTMP}/
 fi
 
-LRMS_PLUGIN=`grep lrms_backend_cmd $CONF_FILE | cut -f1 -d ":" | sed 's/ //g'`
-if [ "X${LRMS_PLUGIN}" != "Xlrms_backend_cmd" ]; then
-    yaimlog INFO "Adding lrms_backend_cmd to ${CONF_FILE}"
-    echo "lrms_backend_cmd: /usr/libexec/glite-info-dynamic-sge --lrmsinfo -c /etc/lcg-info-dynamic-scheduler.conf" >> ${CONF_FILE}
-else
-     LRMS_ARG=`grep lrms_backend_cmd $CONF_FILE | cut -f2 -d ":" | sed 's/ //g'`
-   if [ "X${LRMS_ARG}" != "X/usr/libexec/glite-info-dynamic-sge –lrmsinfo -c /etc/lcg-info-dynamic-scheduler.conf" ]; then
-          yaimlog INFO "lrms_backend_cmd not properly configured. Fixing..."
-	  sed 's/lrms_backend_cmd.*/lrms_backend_cmd: \/usr\/libexec\/glite\-info\-dynamic\-sge --lrmsinfo -c \/etc\/lcg\-info\-dynamic\-scheduler.conf/g' $CONF_FILE > /tmp/lcg-info-dynamic-scheduler.conf
-          mv -f /tmp/lcg-info-dynamic-scheduler.conf $CONF_FILE
-     fi
-fi
-
-SCHED_SECTION=`grep Scheduler $CONF_FILE`
-if [ "X${SCHED_SECTION}" != "X[Scheduler]" ]; then
-     yaimlog INFO "Adding [Scheduler] section to ${CONF_FILE}"
-     echo "[Scheduler]" >> ${CONF_FILE}
-fi
-
-SCHED_PLUGIN=`grep vo_max_jobs_cmd $CONF_FILE | cut -f1 -d ":" | sed 's/ //g'`
-if [ "X${SCHED_PLUGIN}" != "Xvo_max_jobs_cmd" ]; then
-    yaimlog INFO "Adding vo_max_jobs_cmd to ${CONF_FILE}"
-    echo "vo_max_jobs_cmd: /usr/libexec/glite-info-dynamic-sge --vomaxjobs -c /etc/lcg-info-dynamic-scheduler.conf" >> ${CONF_FILE}
-else
-    SCHED_ARG=`grep vo_max_jobs_cmd $CONF_FILE | cut -f2 -d ":" | sed 's/ //g'`
-    if [ "X${LRMS_ARG}" != "X/usr/libexec/glite-info-dynamic-sge –vomaxjobs -c /etc/lcg-info-dynamic-scheduler.conf" ]; then
-          yaimlog INFO "vo_max_jobs_cmd not properly configured. Fixing..."
-	sed 's/vo_max_jobs_cmd.*/vo_max_jobs_cmd: \/usr\/libexec\/glite-info\-dynamic\-sge --vomaxjobs -c \/etc\/lcg\-info\-dynamic\-scheduler.conf/g' $CONF_FILE > /tmp/lcg-info-dynamic-scheduler.conf
-	mv -f /tmp/lcg-info-dynamic-scheduler.conf $CONF_FILE
-     fi
-fi
+yaimlog DEBUG "Create ERT configuration" 
+####@ Create ERT configuration
+ 
+cat <<EOF >> /etc/lrms/scheduler.conf
+module_search_path : ../lrms:../ett
+[LRMS]
+lrms_backend_cmd: $PLUGIN --lrmsinfo -c ${CONF_FILE}
+[Scheduler]
+cycle_time : 0
+vo_max_jobs_cmd: $PLUGIN --vomaxjobs -c ${CONF_FILE}
+EOF
 
 return 0
 
