@@ -68,7 +68,7 @@ if ( echo " ${NODE_TYPE_LIST} " | egrep -q "CE" ) && ( echo " ${NODE_TYPE_LIST} 
 ###
 ### Check if sge scripts and BUPDATER are installed
 ###
-	SGE_CREAM_BIN_DIR="/usr/bin"
+	SGE_CREAM_BIN_DIR="/usr/libexec"
 
         for sge_scripts in BUpdaterSGE sge_helper sge_cancel.sh sge_hold.sh \
             sge_resume.sh sge_status.sh sge_submit.sh BNotifier; do
@@ -120,7 +120,7 @@ if ( echo " ${NODE_TYPE_LIST} " | egrep -q "CE" ) && ( echo " ${NODE_TYPE_LIST} 
   	row_to_add=""
  
 	 # New parser
-	bupdater_bin_path=/usr/bin/BUpdaterSGE
+	bupdater_bin_path=/usr/libexec/BUpdaterSGE
 
 
 # ---*---
@@ -220,10 +220,10 @@ async_notification_host=localhost
 purge_interval=5000000
 
 #Updater location
-bupdater_path=/usr/bin/BUpdaterSGE
+bupdater_path=/usr/libexec/BUpdaterSGE
 
 #Notifier location
-bnotifier_path=${GLITE_LOCATION}/bin/BNotifier
+bnotifier_path=${GLITE_LOCATION}/libexec/BNotifier
 
 #Updater pid file
 bupdater_pidfile=/var/tmp/cream_tomcat_bupdater.pid
@@ -345,7 +345,7 @@ EOF
 	for sge_blah_script in ${my_batch_sys}_status.sh ${my_batch_sys}_cancel.sh \
             ${my_batch_sys}_hold.sh ${my_batch_sys}_resume.sh ${my_batch_sys}_submit.sh; do 
         	#LCAS_SUEXEC_DB_EMPTY=`cat $LCAS_SUEXEC_DB | grep "${GLITE_LOCATION}/bin/$sge_blah_script"`
-		LCAS_SUEXEC_DB_EMPTY=`cat $LCAS_SUEXEC_DB | grep "/usr/bin/$sge_blah_script"`
+		LCAS_SUEXEC_DB_EMPTY=`cat $LCAS_SUEXEC_DB | grep "/usr/libexec/$sge_blah_script"`
         	if [ "X$LCAS_SUEXEC_DB_EMPTY" == "X" ]; then
              		break
         	fi
@@ -359,7 +359,7 @@ EOF
         	cat << EOF > $LCAS_SUEXEC_DB
 pluginname=${moddir}/lcas_voms.mod,pluginargs="-vomsdir /etc/grid-security/vomsdir/ -certdir /etc/grid-security/certificates -authfile ${GRIDMAPFILE} -authformat simple -use_user_dn"
 #pluginname=${moddir}/lcas_check_executable.mod,pluginargs="-exec /bin/pwd:/bin/echo:/usr/bin/readlink:/bin/kill:${GLITE_LOCATION}/bin/BPRclient:/bin/rm:/bin/cp:/usr/bin/id:/bin/cat:/usr/bin/groups:/usr/bin/whoami:${GLITE_LOCATION}/etc/glite-ce-cream/cream-glexec.sh:${GLITE_LOCATION}/bin/blah_job_registry_lkup:${GLITE_LOCATION}/bin/${my_batch_sys}_submit.sh:${GLITE_LOCATION}/bin/${my_batch_sys}_status.sh:${GLITE_LOCATION}/bin/${my_batch_sys}_cancel.sh:${GLITE_LOCATION}/bin/${my_batch_sys}_hold.sh:${GLITE_LOCATION}/bin/${my_batch_sys}_resume.sh:${GLITE_LOCATION}/bin/glite-cream-createsandboxdir"
-pluginname=${moddir}/lcas_check_executable.mod,pluginargs="-exec /bin/pwd:/bin/echo:/usr/bin/readlink:/bin/kill:/usr/bin/BPRclient:/bin/rm:/bin/cp:/usr/bin/id:/bin/cat:/usr/bin/groups:/usr/bin/whoami:/usr/etc/glite-ce-cream/cream-glexec.sh:/usr/bin/blah_job_registry_lkup:/usr/bin/${my_batch_sys}_submit.sh:/usr/bin/${my_batch_sys}_status.sh:/usr/bin/${my_batch_sys}_cancel.sh:/usr/bin/${my_batch_sys}_hold.sh:/usr/bin/${my_batch_sys}_resume.sh:/usr/bin/glite-cream-createsandboxdir"
+pluginname=${moddir}/lcas_check_executable.mod,pluginargs="-exec /bin/pwd:/bin/echo:/usr/bin/readlink:/bin/kill:/usr/libexec/BPRclient:/bin/rm:/bin/cp:/usr/bin/id:/bin/cat:/usr/bin/groups:/usr/bin/whoami:/usr/etc/glite-ce-cream/cream-glexec.sh:/usr/sbin/blah_job_registry_lkup::/usr/libexec/${my_batch_sys}_submit.sh:/usr/libexec/${my_batch_sys}_status.sh:/usr/libexec/${my_batch_sys}_cancel.sh:/usr/libexec/${my_batch_sys}_hold.sh:/usr/libexec/${my_batch_sys}_resume.sh:/usr/bin/glite-cream-createsandboxdir"
 EOF
 	fi
 
