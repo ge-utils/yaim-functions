@@ -1,0 +1,57 @@
+#!/bin/sh
+
+VERSION=`cat VERSION`
+
+prefix=/opt/glite
+
+vars='VERSION
+prefix'
+
+show_help () {
+    echo "$0 [options]"
+    echo "options:"
+    echo " --prefix=PREFIX"
+    exit 0
+}
+
+# code taken from other configures...
+prev=
+dashdash=
+for option ;
+do
+if test -n "$prev"; then
+eval $prev=\$option
+        prev=
+        continue
+fi
+case $option in
+        *=*) optarg=`expr "X$option" : '[^=]*=\(.*\)'` ;;
+        *) optarg=yes ;;
+    esac
+case $option in
+        -h | -help | --help)
+            show_help ;;
+        -prefix | --prefix)
+            prev=prefix ;;
+        -prefix=* | --prefix=*)
+            prefix=$optarg ;;
+    esac
+done
+
+files='Makefile'
+
+for f in $files ; do
+cat > $f << EOF
+##########################################################################
+# WARNING
+# DO NOT EDIT!
+# File automatically generated from `basename $f`.in by configure script
+##########################################################################
+EOF
+    for v in $vars; do
+        echo "$v=`eval echo \\$${v}`" >> $f
+    done
+    cat $f.in >> $f
+done
+
+

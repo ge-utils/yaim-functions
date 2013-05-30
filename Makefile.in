@@ -1,0 +1,47 @@
+PACKAGE=glite-yaim-ge-utils
+
+dist:
+	@mkdir -p build
+	@rm -rf build/$(PACKAGE)-$(VERSION)
+	@mkdir build/$(PACKAGE)-$(VERSION)
+	@sed -e "s/@VERSION@/$(VERSION)/" spec/$(PACKAGE).spec.in \
+        > build/$(PACKAGE).spec
+	@tar --gzip --exclude='*git*' --exclude='build/*' -cf build/$(PACKAGE)-$(VERSION).src.tgz *
+	@echo Created dist files on build/
+	
+install: 
+	@echo installing ...
+	@mkdir -p $(DESTDIR)/$(prefix)/yaim/functions/
+	@mkdir -p $(DESTDIR)/$(prefix)/yaim/defaults/
+	@mkdir -p $(DESTDIR)/$(prefix)/yaim/node-info.d/
+	@mkdir -p $(DESTDIR)/$(prefix)/yaim/examples/siteinfo/services/
+	@mkdir -p $(DESTDIR)/$(prefix)/share/man/man1
+	@mkdir -p $(DESTDIR)/$(prefix)/yaim/etc/versions
+
+	@install -m 0644 src/config/functions/config* $(DESTDIR)/$(prefix)/yaim/functions/
+	@install -m 0644 src/config/defaults/glite* $(DESTDIR)/$(prefix)/yaim/defaults/
+	@install -m 0644 src/config/node-info.d/glite* $(DESTDIR)/$(prefix)/yaim/node-info.d/
+	@install -m 0644 src/config/services/glite* $(DESTDIR)/$(prefix)/yaim/examples/siteinfo/services/
+	@install -m 0644 src/config/man/yaim-sge-utils.1 $(DESTDIR)/$(prefix)/share/man/man1/
+
+	@echo "$(PACKAGE) $(VERSION)" > $(DESTDIR)/$(prefix)/yaim/etc/versions/$(PACKAGE)
+
+clean::
+	@echo cleaning up
+	@rm -rf build 
+
+rpm: dist
+	@mkdir -p  build/RPMS
+	@mkdir -p  build/rpmbuild/RPMS/noarch
+	@mkdir -p  build/rpmbuild/SRPMS/
+	@mkdir -p  build/rpmbuild/SPECS/
+	@mkdir -p  build/rpmbuild/SOURCES/
+	@mkdir -p  build/rpmbuild/BUILD/
+	@cp build/$(PACKAGE).spec build/rpmbuild/SPECS/$(PACKAGE).spec
+	@cp build/$(PACKAGE)-$(VERSION).src.tgz build/rpmbuild/SOURCES
+	@rpmbuild --define "_topdir `pwd`/build/rpmbuild/"  -ba build/rpmbuild/SPECS/${PACKAGE}.spec
+	@cp build/rpmbuild/RPMS/noarch/*.rpm build/rpmbuild/SRPMS/*.rpm build/RPMS/.
+	@echo Created RPM on build/RPMS
+
+export VERSION
+export prefix

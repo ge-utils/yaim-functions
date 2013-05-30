@@ -110,7 +110,7 @@ GLITE_CREAM_LOCATION_GIP=/var/lib/bdii/gip
 GLITE_CREAM_LIBEXEC=/usr/libexec
 
 CE_PLUGIN_FILE=${GLITE_CREAM_LOCATION_GIP}/plugin/glite-info-dynamic-ce
-PLUGIN=${GLITE_CREAM_LIBEXEC}/glite-info-dynamic-sge
+PLUGIN=${GLITE_CREAM_LIBEXEC}/glite-info-dynamic-ge
 CONF_FILE=${SGE_INFOPROVIDER_DIR}/scheduler.conf
 
 if [ ! -d ${SGE_INFOPROVIDER_DIR} ]; then
@@ -131,10 +131,10 @@ fi
 
 yaimlog INFO "Build InfoProvider based on LeSC implementation"
 
-SGE_INFOPROVIDER=${GLITE_CREAM_LIBEXEC}/glite-info-dynamic-sge
+SGE_INFOPROVIDER=${GLITE_CREAM_LIBEXEC}/glite-info-dynamic-ge
 
 if [ ! -e ${SGE_INFOPROVIDER} ]; then
-   yaimlog ABORT "SGE InfoProvider is not installed !!! Without it the information system will not work ! Exiting ... "
+   yaimlog ABORT "GE InfoProvider is not installed !!! Without it the information system will not work ! Exiting ... "
    exit 1
 fi
 
@@ -255,7 +255,7 @@ chmod 644 ${SGE_INFOPROVIDER_REPORTER}
 ### Set /var/lib/bdii/gip/plugin/glite-info-dynamic-ce
 ###
 
-yaimlog DEBUG "Configure SGE dynamic information plugin: ${CE_PLUGIN_FILE}"
+yaimlog DEBUG "Configure GE dynamic information plugin: ${CE_PLUGIN_FILE}"
 
 cat <<EOF_CE_PLUGIN_FILE > ${CE_PLUGIN_FILE}
 #!/bin/sh
