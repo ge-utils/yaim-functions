@@ -2,16 +2,16 @@
 %define _topdir %{topdir} 
 Summary: glite-yaim-sge-utils module configure SGE utils. 
 Name: glite-yaim-sge-utils
-Version: x
-Vendor: EGEE
-Release: x
-License: EGEE
-Group: EGEE
-Source: %{name}.src.tgz
+Version: 4.4.0
+Release: 1.%{?dist}
 BuildArch: noarch
+License: Apache Software License
+Group: System/Configuration
+Source: %{name}.src.tgz
 Prefix: /opt/glite
 BuildRoot: %{_tmppath}/%{name}-%{version}-build
-Packager: EGEE
+Vendor: CREAM GE utils <ge-support@listas.cesga.es>
+Packager: Gonçalo Borges <goncalo@lip.pt> 
 
 %description
 This package contains the yaim functions necessary to configure SGE utils.
