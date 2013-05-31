@@ -1,0 +1,46 @@
+Summary: YAIM module for CREAM Grid Engine utils. 
+Name: glite-yaim-ge-utils
+Version: @VERSION@
+Release: 1
+Obsoletes: glite-yaim-sge-utils
+License: Apache Software License
+Group: System/Configuration
+Requires: glite-yaim-core
+Vendor: CREAM GE utils <ge-support@listas.cesga.es>
+Packager: CREAM GE utils <ge-support@listas.cesga.es>
+Source: %{name}-%{version}.src.tgz
+BuildArch: noarch
+BuildRoot: %{_tmppath}/%{name}-%{version}-build
+URL: https://github.com/ge-utils/yaim-functions
+
+%description
+This package contains the yaim functions necessary to configure CREAM Grid Engine utils.
+
+%define prefix /opt/glite
+
+%prep
+%setup -c
+
+%build
+%configure
+./configure --prefix=%{prefix}
+
+%install
+make install DESTDIR=%{buildroot}
+
+%files
+%defattr(0644,root,root)
+%{prefix}/yaim/functions/*
+%{prefix}/yaim/defaults/*
+%{prefix}/yaim/etc/versions/%{name}
+%config(noreplace) %{prefix}/yaim/node-info.d/glite*
+%{prefix}/yaim/examples/siteinfo/services/glite-* 
+%{prefix}/share/man/man1/yaim-sge-utils.1
+%doc LICENSE
+
+%clean
+rm -rf %{buildroot}
+
+%changelog
+* Thu May 30 2013 - CREAM GE utils <ge-support@listas.cesga.es> - 4.4.0
+- Upgrade to version 4.4.0
