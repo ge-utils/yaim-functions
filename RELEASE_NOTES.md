@@ -3,12 +3,17 @@
 ## Release notes 
  * Introduces an updated blah.config configuration for Grid Engine where GE environment variables are automatically loaded by blahd daemons
  * In compliance with blah.config releases for other LRMS releases, it also introduces a different path for the blah job registry. Therefore, before update, please perform the following actions:
+ 
    1) /etc/init.d/gLite stop
+ 
    2) cp -r /var/tmp/cream_tomcat_registry.db /var/blah/user_blah_job_registry.bjr
+
    3) make sure that the directory permissions are 
       drwxrwx--t 4 tomcat tomcat 4096 Jul 23 17:44 user_blah_job_registry.bjr
+
    4) Reconfigure the node with yaim
       /opt/glite/yaim/bin/yaim -c -s site-info.def -n creamCE -n SGE_utils
+
  * Failure to complete the previous steps will result in the lost of all existing jobs. 
 
 ### New Features
