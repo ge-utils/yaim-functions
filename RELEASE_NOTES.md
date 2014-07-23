@@ -10,6 +10,7 @@
    4) Reconfigure the node with yaim
       /opt/glite/yaim/bin/yaim -c -s site-info.def -n creamCE -n SGE_utils
  * Failure to complete the previous steps will result in the lost of all existing jobs. 
+
 ### New Features
  * None.
 
