@@ -1,12 +1,13 @@
-# glite-yaim-ge-utils v4.4.0
+# glite-yaim-ge-utils v4.5.0
 
 ## Release notes 
+ * Release that introduces an updated blah.config configuration for Grid Engine
 
 ### New Features
  * None.
 
 ### Fixed Issues
- * SoGE version comparison (GGUS #93920).
+ * Load of GE environment variables in blah.config (GGUS #102418).
 
 ### Available packages:
  * Scientific Linux 5: http://download.opensuse.org/repositories/home:/aloga:/ge-utils/sl5/noarch/glite-yaim-ge-utils-4.4.0-2.1.noarch.rpm 
