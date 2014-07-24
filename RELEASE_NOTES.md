@@ -1,14 +1,19 @@
 # glite-yaim-ge-utils v4.5.0
 
 ## Release notes 
- * Introduces an updated blah.config configuration for Grid Engine where GE environment variables are automatically loaded by blahd daemons
- * In compliance with blah.config releases for other LRMS releases, it also introduces a different path for the blah job registry. Therefore, before update, please perform the following actions:
+ * Introduces an updated blah.config configuration for Grid Engine where GE environment variables are automatically loaded by blahd daemons. Yaim reconfiguration is mandatory.
  
-   1) /etc/init.d/gLite stop
+ * In compliance with blah.config releases for other LRMS releases, it also introduces a different path for the blah job registry. Therefore, before reconfigure with yaim, please perform the following actions:
  
-   2) cp -r /var/tmp/cream_tomcat_registry.db /var/blah/user_blah_job_registry.bjr
+   1) Stop all gLite services
 
-   3) make sure that the directory permissions are 
+      /etc/init.d/gLite stop
+ 
+   2) Copy the present blah registry to the new location
+   
+      cp -r /var/tmp/cream_tomcat_registry.db /var/blah/user_blah_job_registry.bjr
+
+   3) Make sure that the directory permissions are correct
 
       drwxrwx--t 4 tomcat tomcat 4096 Jul 23 17:44 user_blah_job_registry.bjr
 
@@ -25,5 +30,5 @@
  * Load of GE environment variables in blah.config (GGUS #102418).
 
 ### Available packages:
- * Scientific Linux 5: http://download.opensuse.org/repositories/home:/aloga:/ge-utils/sl5/noarch/glite-yaim-ge-utils-4.4.0-2.1.noarch.rpm 
- * Scientific Linux 6: http://download.opensuse.org/repositories/home:/aloga:/ge-utils/sl6/noarch/glite-yaim-ge-utils-4.4.0-2.1.noarch.rpm 
+ * Scientific Linux 5: http://download.opensuse.org/repositories/home:/aloga:/ge-utils/sl5/noarch/glite-yaim-ge-utils-4.5.0-2.1.noarch.rpm 
+ * Scientific Linux 6: http://download.opensuse.org/repositories/home:/aloga:/ge-utils/sl6/noarch/glite-yaim-ge-utils-4.5.0-2.1.noarch.rpm
