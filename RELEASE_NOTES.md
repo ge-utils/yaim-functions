@@ -5,21 +5,21 @@
 
    1) Stop all gLite services
 
-      /etc/init.d/gLite stop
+         /etc/init.d/gLite stop
  
    2) Copy the present blah registry to the new location making sure that all the permissions are correct
    
-      mkdir /var/blah (if it doesn't exist)
+         mkdir /var/blah (if it doesn't exist)
       
-      chown tomcat:tomcat /var/blah
+         chown tomcat:tomcat /var/blah
       
-      chmod 771 /var/blah
+         chmod 771 /var/blah
       
-      cp -rp /var/tmp/cream_tomcat_registry.db /var/blah/user_blah_job_registry.bjr
+         cp -rp /var/tmp/cream_tomcat_registry.db /var/blah/user_blah_job_registry.bjr
 
    3) Reconfigure the node with yaim
    
-      /opt/glite/yaim/bin/yaim -c -s site-info.def -n creamCE -n SGE_utils
+         /opt/glite/yaim/bin/yaim -c -s site-info.def -n creamCE -n SGE_utils
 
 ### New Features
  * Introduces an updated blah.config configuration for Grid Engine where GE environment variables are automatically loaded by blahd daemons.
