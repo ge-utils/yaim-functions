@@ -11,7 +11,7 @@
  
    2) Copy the present blah registry to the new location
    
-      cp -r /var/tmp/cream_tomcat_registry.db /var/blah/user_blah_job_registry.bjr
+      cp -rp /var/tmp/cream_tomcat_registry.db /var/blah/user_blah_job_registry.bjr
 
    3) Make sure that the directory permissions are correct
 
