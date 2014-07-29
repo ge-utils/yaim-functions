@@ -1,7 +1,7 @@
 # glite-yaim-ge-utils v4.5.0
 
 ## Release notes 
- *  Yaim reconfiguration is mandatory. However, before reconfiguration, the site admin has to migrate the blah job registry manually. Failure to complete this step will result in the lost of all existing jobs. The full procedure is described hereafter:
+ *  Yaim reconfiguration is mandatory. However, before reconfiguration, the site admin has to migrate the blah job registry manually. Failure to complete this step will result in the lost of blah records for all existing jobs. The full procedure is described hereafter:
 
    1) Stop all gLite services
 
