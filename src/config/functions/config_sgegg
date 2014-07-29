@@ -281,7 +281,6 @@ EOF
 
 # ---*---
 
-
 ###
 ### /etc/logrotate.d/blahp-logrotate - BEGIN
 ###
@@ -382,6 +381,9 @@ EOF
 	fi
 
 fi
+
+/etc/init.d/gLite stop
+/etc/init.d/gLite start
 
 return 0
 
