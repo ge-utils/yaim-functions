@@ -1,10 +1,8 @@
 # glite-yaim-ge-utils v4.5.0
 
 ## Release notes 
- * Introduces an updated blah.config configuration for Grid Engine where GE environment variables are automatically loaded by blahd daemons. Yaim reconfiguration is mandatory.
- 
- * In compliance with blah.config releases for other LRMS releases, it also introduces a different path for the blah job registry. Therefore, before reconfigure with yaim, please perform the following actions:
- 
+ *  Yaim reconfiguration is mandatory. However, before reconfiguration, the site admin has to migrate the blah job registry manually. Failure to complete this step will result in the lost of all existing jobs. The full procedure is described hereafter:
+
    1) Stop all gLite services
 
       /etc/init.d/gLite stop
@@ -20,10 +18,10 @@
    
       /opt/glite/yaim/bin/yaim -c -s site-info.def -n creamCE -n SGE_utils
 
- * Failure to complete the previous steps will result in the lost of all existing jobs. 
-
 ### New Features
- * None.
+ * Introduces an updated blah.config configuration for Grid Engine where GE environment variables are automatically loaded by blahd daemons.
+ 
+ * Introduces a different path for the blah job registry (in compliance with blah releases for other LRMS releases). 
 
 ### Fixed Issues
  * Load of GE environment variables in blah.config (GGUS #102418).
