@@ -29,13 +29,17 @@
 
 
 function config_sgegg_check(){
-    requires $1 SGE_ROOT SGE_CELL CE_BATCH_SYS BATCH_BIN_DIR GLITE_LOCATION GLITE_LOCATION_LOG 
+    requires $1 SGE_ROOT SGE_CELL SGE_QMASTER SGE_EXECD \
+                CE_BATCH_SYS BATCH_BIN_DIR \
+                BLAH_CHILD_POLL_TIMEOUT BLPARSER_WITH_UPDATER_NOTIFIER BLAHPD_LOCATION BLAHPD_CONFIG_LOCATION 
     return $?
 }
 
 
 function config_sgegg_setenv(){
-    return 0
+  yaimgridenv_set BLAHPD_LOCATION ${BLAHPD_LOCATION}
+  yaimgridenv_set BLAHPD_CONFIG_LOCATION ${BLAHPD_CONFIG_LOCATION}
+  return $?
 }
 
 
@@ -43,8 +47,13 @@ function config_sgegg(){
 
 INSTALL_ROOT=${INSTALL_ROOT:-/opt}
 
+GLITE_CREAM_LOCATION_ETC=/etc
+GLITE_CREAM_LOCATION_LOG=/var/log/cream
+GLITE_CREAM_LOCATION_LIBEXEC=/usr/libexec
+GLITE_CREAM_LOCATION_VAR=/var
+
 ###
-### Get gLite version
+### Get EMI version
 ###
 
 yaimlog DEBUG "Getting EMI version... "
@@ -52,7 +61,7 @@ yaimlog DEBUG "Getting EMI version... "
 emi_version=/etc/emi-version
 
 if [ ! -e ${emi_version} ]; then
-    yaimlog ABORT "EMI version not found Exiting..."
+    yaimlog ABORT "EMI version not found. Exiting..."
     exit 1
 fi
 
@@ -66,7 +75,7 @@ yaimlog DEBUG "Running SGE Grid Gateway configuration for gLite version $emi_ver
 if ( echo " ${NODE_TYPE_LIST} " | egrep -q "CE" ) && ( echo " ${NODE_TYPE_LIST} " | egrep -q 'creamCE' ); then
 
 ###
-### Check if sge scripts and BUPDATER are installed
+### Check if sge scripts, BUPDATERSGE and BNotifier are installed
 ###
 	SGE_CREAM_BIN_DIR="/usr/libexec"
 
@@ -94,15 +103,10 @@ if ( echo " ${NODE_TYPE_LIST} " | egrep -q "CE" ) && ( echo " ${NODE_TYPE_LIST} 
     		cp $SCRIPT $SCRIPT.old
   	fi 
 
-  	# local variables definition
-	mkdir -p /var/log/cream/accounting
-	chown root.${TOMCAT_USER} /var/log/cream/accounting
-	chmod 0730 /var/log/cream/accounting
-
         yaimlog DEBUG "Set up variables to fill $SCRIPT..."
 
 	blah_lrms=sge
-	blah_accounting_log=/var/log/cream/accounting/blahp.log
+	blah_accounting_log=${GLITE_CREAM_LOCATION_LOG}/accounting/blahp.log
   	blah_bin=${BATCH_BIN_DIR}
   	blah_conf=
   	blah_spool=${BATCH_LOG_DIR}
@@ -110,16 +114,18 @@ if ( echo " ${NODE_TYPE_LIST} " | egrep -q "CE" ) && ( echo " ${NODE_TYPE_LIST} 
   	blah_nologaccess=
   	blah_fallback=no
   	blah_blp=yes
-  	blah_blp_server=
-  	blah_blp_port=
-  	blah_blp_num=
-  	blah_blp_server1=
-  	blah_blp_server2=
-  	blah_blp_port1=
-  	blah_blp_port2=
+        ### Following variables are only necessary when 
+        ### BLPARSER_WITH_UPDATER_NOTIFIER=false, which is not the GE case
+  	# blah_blp_server=
+  	# blah_blp_port=
+  	# blah_blp_num=
+  	# blah_blp_server1=
+  	# blah_blp_server2=
+  	# blah_blp_port1=
+  	# blah_blp_port2=
   	row_to_add=""
  
-	 # New parser
+	# New parser
 	bupdater_bin_path=/usr/libexec/BUpdaterSGE
 
 
@@ -133,15 +139,30 @@ if ( echo " ${NODE_TYPE_LIST} " | egrep -q "CE" ) && ( echo " ${NODE_TYPE_LIST} 
         yaimlog DEBUG "Start building $SCRIPT..."
 
   	cat << EOF > $SCRIPT 
+
+# export GE variables so that BLAHD daemons inherit 
+# the correct environment
+export SGE_ROOT=$SGE_ROOT
+export SGE_CELL=$SGE_CELL
+export SGE_QMASTER_PORT=$SGE_QMASTER
+export SGE_EXECD_PORT=$SGE_EXECD
+
 # Supported batch systems
 supported_lrms=$blah_lrms
 
-blah_child_poll_timeout=200 
+blah_child_poll_timeout=$BLAH_CHILD_POLL_TIMEOUT
+
+alldone_interval=86400
 
 ${row_to_add}
 
 # Needed to implement the short term solution for proxy renewal (savannah task #8176) 
 blah_disable_wn_proxy_renewal=yes 
+
+# working on glexec -> sudo support 
+blah_disable_proxy_user_copy=yes
+blah_id_mapping_command_sudo="/usr/bin/sudo -H"
+blah_set_default_workdir_to_home=yes
 
 # DGAS logfile 
 BLAHPD_ACCOUNTING_INFO_LOG=$blah_accounting_log
@@ -169,26 +190,23 @@ ${blah_lrms}_fallback=$blah_fallback
 # Set to yes to use Blah Log Parser for ${blah_lrms}
 ${blah_lrms}_BLParser=$blah_blp
 
+### Following variables are only necessary when 
+### BLPARSER_WITH_UPDATER_NOTIFIER=false, which is not the GE case
 # Host where Blah Log Parser for ${blah_lrms} is running
-${blah_lrms}_BLPserver=$blah_blp_server
-
+# ${blah_lrms}_BLPserver=$blah_blp_server
 # Port where Blah Log Parser for ${blah_lrms} is running
-${blah_lrms}_BLPport=$blah_blp_port
-
+# ${blah_lrms}_BLPport=$blah_blp_port
 # Number of Blah Log Parser to try for ${blah_lrms}
 # (if it is null ${blah_lrms}_BLPserver and ${blah_lrms}_BLPport are used)
-${blah_lrms}_num_BLParser=$blah_blp_num
+# ${blah_lrms}_num_BLParser=$blah_blp_num
+# ${blah_lrms}_BLPserver1=$blah_blp_server1
+# ${blah_lrms}_BLPport1=$blah_blp_port1
+# ${blah_lrms}_BLPserver2=$blah_blp_server2
+# ${blah_lrms}_BLPport2=$blah_blp_port2
 
-${blah_lrms}_BLPserver1=$blah_blp_server1
-${blah_lrms}_BLPport1=$blah_blp_port1
-
-${blah_lrms}_BLPserver2=$blah_blp_server2
-${blah_lrms}_BLPport2=$blah_blp_port2
-
+# Definitions for BUpdaterSGE
 ${blah_lrms}_rootpath=$SGE_ROOT
 ${blah_lrms}_cellname=$SGE_CELL
-#${blah_lrms}_helperpath=/opt/glite/bin/sge_helper
-#${blah_lrms}_helperpath=/usr/bin/sge_helper
 EOF
 
 
@@ -211,55 +229,57 @@ EOF
       			chmod 771 /var/blah
     		fi
     		cat << EOF >> $SCRIPT
+
 # New parser section
-job_registry=/var/tmp/cream_tomcat_registry.db
+# OLD: job_registry=/var/tmp/cream_tomcat_registry.db
+job_registry=${GLITE_CREAM_LOCATION_VAR}/blah/user_blah_job_registry.bjr
+
 async_notification_port=33329
 async_notification_host=localhost
+bupdater_loop_interval=${BUPDATER_LOOP_INTERVAL}
 
 # about 2 months of purge interval.
-purge_interval=5000000
+purge_interval=2500000
 
-#Updater location
-bupdater_path=/usr/libexec/BUpdaterSGE
+# Updater location
+bupdater_path=${bupdater_bin_path}
 
-#Notifier location
-bnotifier_path=${GLITE_LOCATION}/libexec/BNotifier
+# Notifier location
+bnotifier_path=${GLITE_CREAM_LOCATION_LIBEXEC}/BNotifier
 
-#Updater pid file
-bupdater_pidfile=/var/tmp/cream_tomcat_bupdater.pid
+# Updater pid file
+# OLD: bupdater_pidfile=/var/tmp/cream_tomcat_bupdater.pid
+bupdater_pidfile=${GLITE_CREAM_LOCATION_VAR}/blah/blah_bupdater.pid
 
-#Notifier pid file
-bnotifier_pidfile=/var/tmp/cream_tomcat_bnotifier.pid
+# Notifier pid file
+# OLD: bnotifier_pidfile=/var/tmp/cream_tomcat_bnotifier.pid
+bnotifier_pidfile=${GLITE_CREAM_LOCATION_VAR}/blah/blah_bnotifier.pid
 
-#Updater debug level
+# Updater debug level
 bupdater_debug_level=2
 
-#Updater debug log file
-#bupdater_debug_logfile=${GLITE_LOCATION_VAR}/log/glite-ce-bupdater.log
-bupdater_debug_logfile=/var/log/cream/glite-ce-bupdater.log
+# Updater debug log file
+bupdater_debug_logfile=${GLITE_CREAM_LOCATION_LOG}/glite-ce-bupdater.log
 
-#Notifier debug level
+# Notifier debug level
 bnotifier_debug_level=2
 
-#Notifier debug log file
-#bnotifier_debug_logfile=${GLITE_LOCATION_VAR}/log/glite-ce-bnotifier.log
-bnotifier_debug_logfile=/var/log/cream/glite-ce-bnotifier.log
+# Notifier debug log file
+bnotifier_debug_logfile=${GLITE_CREAM_LOCATION_LOG}/glite-ce-bnotifier.log
 
 blah_children_restart_interval=0
 
-# Following email from M. Sgaravatto 
-# Subject: Changes needed in blah.config for CREAM CE v. 1.6
-# Date: 21/12/2009 
-blah_disable_proxy_user_copy=yes
-blah_id_mapping_command_sudo="/usr/bin/sudo -H"
-blah_set_default_workdir_to_home=yes 
+# Enable sharing of job registry cache via mmap
+job_registry_use_mmap=yes
+
+# Enable check of execution of bupdater and bnotifier
+blah_check_children_interval=30
 
 EOF
 	fi
 
 
 # ---*---
-
 
 ###
 ### /etc/logrotate.d/blahp-logrotate - BEGIN
@@ -270,10 +290,9 @@ EOF
         yaimlog DEBUG "Set up $SCRIPT..."
 
   	cat << EOF > $SCRIPT
-#${GLITE_LOCATION_LOG}/accounting/blahp.log {
-/var/log/cream/accounting/blahp.log {
+${GLITE_CREAM_LOCATION_LOG}/blahp.log {
         copytruncate
-        rotate 50
+        rotate 365
         size = 10M
         missingok
         nomail
@@ -295,8 +314,7 @@ EOF
 		yaimlog DEBUG "Set up $SCRIPT..."
 
     		cat << EOF > $SCRIPT
-#${GLITE_LOCATION_LOG}/glite-ce-bupdater.log {
-/var/log/cream/glite-ce-bupdater.log {
+${GLITE_CREAM_LOCATION_LOG}/glite-ce-bupdater.log {
         copytruncate
         rotate 50
         size = 10M
@@ -309,8 +327,7 @@ EOF
 		yaimlog DEBUG "Set up $SCRIPT..."
 
     		cat << EOF > $SCRIPT
-#${GLITE_LOCATION_LOG}/glite-ce-bnotifier.log
-/var/log/cream/glite-ce-bnotifier.log    
+${GLITE_CREAM_LOCATION_LOG}/glite-ce-bnotifier.log    
  {
         copytruncate
         rotate 50
@@ -364,6 +381,9 @@ EOF
 	fi
 
 fi
+
+/etc/init.d/gLite stop
+/etc/init.d/gLite start
 
 return 0
 

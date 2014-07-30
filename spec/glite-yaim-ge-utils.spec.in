@@ -42,5 +42,7 @@ make install DESTDIR=%{buildroot}
 rm -rf %{buildroot}
 
 %changelog
+* Wed Jul 30 2014 - CREAM GE utils <ge-support@listas.cesga.es> - 4.5.0
+- Upgrade to version 4.5.0
 * Thu May 30 2013 - CREAM GE utils <ge-support@listas.cesga.es> - 4.4.0
 - Upgrade to version 4.4.0
